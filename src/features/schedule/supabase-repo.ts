@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { WidgetSetting } from "@/features/command/types";
 import type { DailySummary, GameState, LedgerEntry } from "@/features/game/types";
+import type { OracleAction, OracleMessage, Proposal } from "@/features/oracle/types";
 import type { AppRepo } from "./generation";
 import type { BlockInstance, CalendarEvent, TemplateBlock } from "./types";
 
@@ -51,6 +52,9 @@ const SUMMARY_COLUMNS =
   "xp_lost, power_change, counted, streak_before, streak_after, tier_before, tier_after, collapsed, demoted, seen_at";
 const LEDGER_COLUMNS =
   "id, date, source, block_instance_id, block_title, reason, delta_xp, delta_power, tier, created_at";
+const PROPOSAL_COLUMNS =
+  "id, conversation_id, kind, summary, changes, status, expires_at, decided_at, created_at";
+const ACTION_COLUMNS = "id, conversation_id, tool, summary, undo, undo_until, undone_at, created_at";
 const STATE_COLUMNS =
   "total_xp, power, tier, streak_days, power_zero_count, demotion_count, last_closed_date, version, seen_level, seen_tier";
 
@@ -60,6 +64,123 @@ const STATE_COLUMNS =
  */
 export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo {
   return {
+    async getLatestConversationId() {
+      const row = unwrapMaybe(
+        await db.from("ai_conversations").select("id").order("created_at", { ascending: false }).limit(1).maybeSingle()
+      );
+      return (row as { id: string } | null)?.id ?? null;
+    },
+    async createConversation() {
+      const row = unwrap(await db.from("ai_conversations").insert({ user_id: userId }).select("id").single());
+      return (row as unknown as { id: string }).id;
+    },
+    async listMessages(conversationId, limit) {
+      const rows = unwrap(
+        await db
+          .from("ai_messages")
+          .select("id, conversation_id, role, content, created_at")
+          .eq("conversation_id", conversationId)
+          .order("created_at", { ascending: false })
+          .limit(limit)
+      ) as OracleMessage[];
+      return rows.reverse();
+    },
+    async addMessage(conversationId, role, content) {
+      check(await db.from("ai_messages").insert({ user_id: userId, conversation_id: conversationId, role, content }));
+    },
+
+    async createProposal(proposal) {
+      return unwrap(
+        await db
+          .from("ai_proposals")
+          .insert({ ...proposal, user_id: userId })
+          .select(PROPOSAL_COLUMNS)
+          .single()
+      ) as unknown as Proposal;
+    },
+    async getProposal(id) {
+      return unwrapMaybe(await db.from("ai_proposals").select(PROPOSAL_COLUMNS).eq("id", id).maybeSingle()) as Proposal | null;
+    },
+    async listProposals(conversationId) {
+      return unwrap(
+        await db.from("ai_proposals").select(PROPOSAL_COLUMNS).eq("conversation_id", conversationId).order("created_at")
+      ) as unknown as Proposal[];
+    },
+    async updateProposal(id, patch) {
+      check(await db.from("ai_proposals").update(patch).eq("id", id));
+    },
+
+    async createAction(action) {
+      return unwrap(
+        await db
+          .from("ai_actions")
+          .insert({ ...action, user_id: userId })
+          .select(ACTION_COLUMNS)
+          .single()
+      ) as unknown as OracleAction;
+    },
+    async getAction(id) {
+      return unwrapMaybe(await db.from("ai_actions").select(ACTION_COLUMNS).eq("id", id).maybeSingle()) as OracleAction | null;
+    },
+    async listActions(conversationId) {
+      return unwrap(
+        await db.from("ai_actions").select(ACTION_COLUMNS).eq("conversation_id", conversationId).order("created_at")
+      ) as unknown as OracleAction[];
+    },
+    async markActionUndone(id, at) {
+      check(await db.from("ai_actions").update({ undone_at: at }).eq("id", id));
+    },
+
+    async bumpRateLimit(maxPerMinute) {
+      const result = await db.rpc("bump_ai_rate_limit", { owner_id: userId, max_per_minute: maxPerMinute });
+      if (result.error) throw new Error("Rate limit check failed");
+      return result.data === true;
+    },
+
+    async getSuggestion(date) {
+      return unwrapMaybe(
+        await db.from("ai_suggestions").select("date, text, generation_count").eq("date", date).maybeSingle()
+      );
+    },
+    async saveSuggestion(suggestion) {
+      check(await db.from("ai_suggestions").upsert({ ...suggestion, user_id: userId }, { onConflict: "user_id,date" }));
+    },
+
+    async getWeeklyReview(weekStart) {
+      const row = unwrapMaybe(
+        await db.from("weekly_reviews").select("oracle_text").eq("week_start", weekStart).maybeSingle()
+      );
+      return (row as { oracle_text: string | null } | null)?.oracle_text ?? null;
+    },
+    async saveWeeklyReview(weekStart, text) {
+      check(
+        await db
+          .from("weekly_reviews")
+          .upsert({ user_id: userId, week_start: weekStart, oracle_text: text }, { onConflict: "user_id,week_start" })
+      );
+    },
+
+    async addAudit(entry) {
+      check(await db.from("audit_log").insert({ ...entry, user_id: userId }));
+    },
+    async listAudit(limit) {
+      return unwrap(
+        await db
+          .from("audit_log")
+          .select("id, actor, action, entity, details, created_at")
+          .order("created_at", { ascending: false })
+          .limit(limit)
+      );
+    },
+
+    async getAboutMe() {
+      const row = unwrapMaybe(await db.from("settings").select("about_me").maybeSingle());
+      return (row as { about_me: string } | null)?.about_me ?? "";
+    },
+    async setAboutMe(text) {
+      check(await db.from("settings").upsert({ user_id: userId, about_me: text }, { onConflict: "user_id" }));
+    },
+
     async listGoals() {
       return unwrap(await db.from("goals").select("id, title, why, target_date, status, created_at").order("created_at"));
     },
@@ -88,7 +209,13 @@ export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo 
       );
     },
     async createProject(fields) {
-      check(await db.from("projects").insert({ ...fields, user_id: userId }));
+      return unwrap(
+        await db
+          .from("projects")
+          .insert({ ...fields, user_id: userId })
+          .select("id, goal_id, title, status, progress_mode, manual_percent")
+          .single()
+      );
     },
     async updateProject(id, fields) {
       check(await db.from("projects").update(fields).eq("id", id));
@@ -116,7 +243,13 @@ export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo 
       );
     },
     async createTask(fields) {
-      check(await db.from("tasks").insert({ ...fields, user_id: userId }));
+      return unwrap(
+        await db
+          .from("tasks")
+          .insert({ ...fields, user_id: userId })
+          .select("id, project_id, title, due_date, status, estimate_minutes, category, track_id")
+          .single()
+      );
     },
     async updateTask(id, fields) {
       check(await db.from("tasks").update(fields).eq("id", id));

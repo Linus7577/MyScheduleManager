@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getPreviewRepo } from "@/features/schedule/memory-repo";
 import { requireOwner } from "@/lib/auth/owner";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { setLocaleCookie, setMotionCookie } from "./locale-cookie";
@@ -13,12 +14,14 @@ export async function saveSettings(_previous: SaveSettingsState, formData: FormD
     locale: formData.get("locale"),
     timezone: formData.get("timezone"),
     motion: formData.get("motion"),
+    about_me: formData.get("about_me"),
   });
   if (!parsed.success) return { status: "invalid" };
 
   if (owner.preview) {
     await setLocaleCookie(parsed.data.locale);
     await setMotionCookie(parsed.data.motion);
+    await getPreviewRepo().setAboutMe(parsed.data.about_me);
     revalidatePath("/", "layout");
     return { status: "savedPreview" };
   }

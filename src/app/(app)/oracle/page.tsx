@@ -1,8 +1,10 @@
-import { Eye } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { SealedPage } from "@/components/shell/sealed-page";
+import { OracleChat } from "@/features/oracle/components/chat";
+import { getChatView } from "@/features/oracle/service";
+import { getScheduleContext } from "@/features/schedule/context";
 
 export default async function OraclePage() {
-  const t = await getTranslations("oracle");
-  return <SealedPage title={t("title")} flavor={t("flavor")} phase={4} icon={Eye} />;
+  const ctx = await getScheduleContext();
+  const view = await getChatView(ctx);
+
+  return <OracleChat {...view} now={(ctx.now ?? new Date()).toISOString()} />;
 }

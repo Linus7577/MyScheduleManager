@@ -67,6 +67,67 @@
     "skip": "略過",
     "continue": "繼續"
   },
+  "oracle": {
+    "title": "神諭",
+    "close": "關閉神諭",
+    "empty": "說吧。神諭看得見你的一週、你的誓言與你的失敗。",
+    "placeholder": "詢問神諭…",
+    "messageLabel": "你的訊息",
+    "send": "傳送",
+    "thinking": "神諭正在思索…",
+    "proposalLabel": "等待你決定的提案",
+    "proposalBlocks": "提案：僅限本週",
+    "proposalTemplate": "提案：你的循環範本",
+    "willBeRemoved": "將被移除",
+    "approve": "核准",
+    "edit": "編輯",
+    "reject": "拒絕",
+    "editProposal": "編輯並核准",
+    "editHint": "儲存後會以你的修改核准此提案。",
+    "fieldTitle": "標題",
+    "fieldStart": "開始",
+    "fieldEnd": "結束",
+    "status": {
+      "approved": "已核准並套用",
+      "rejected": "已拒絕",
+      "expired": "已於 48 小時後失效"
+    },
+    "actionLabel": "神諭完成的動作",
+    "undo": "復原",
+    "undone": "已復原",
+    "tools": {
+      "create_goal": "已建立目標",
+      "create_project": "已建立專案",
+      "create_task": "已建立任務",
+      "update_progress": "已更新進度",
+      "write_weekly_review": "已撰寫每週回顧"
+    },
+    "noSuggestion": "神諭今天尚未開口。",
+    "seekCounsel": "尋求建言",
+    "askAgain": "再問一次",
+    "suggestionsLeft": "{count, plural, =0 {今天已用完} other {今天還有 # 次}}",
+    "openChat": "與神諭對話"
+  },
+  "logs": {
+    "title": "紀錄",
+    "back": "設定",
+    "intro": "神諭做過的一切、你核准或復原的動作，以及每天的結算。",
+    "empty": "尚無任何紀錄。",
+    "actions": {
+      "day_closeout": "當日已結算",
+      "correction": "已修正結算日",
+      "ai_action": "神諭採取了動作",
+      "ai_action_undone": "已復原神諭的動作",
+      "proposal_created": "神諭提出了變更",
+      "proposal_approved": "提案已核准",
+      "proposal_rejected": "提案已拒絕"
+    },
+    "actors": {
+      "owner": "你",
+      "oracle": "神諭",
+      "system": "系統"
+    }
+  },
   "battleLog": {
     "title": "戰鬥紀錄",
     "back": "更多",
@@ -409,11 +470,16 @@
     "dayClosed": "這天已結算，只能在 24 小時內從循環頁修正。",
     "correctionExpired": "修正這天的 24 小時已過。",
     "correctionNeedsStatus": "已結算的時段必須是完成、部分或略過。",
-    "checkinInFuture": "那天還沒到。"
-  },
-  "oracle": {
-    "title": "神諭",
-    "flavor": "神諭沉睡中。時辰未到，切勿喚醒。"
+    "checkinInFuture": "那天還沒到。",
+    "oracleBusy": "神諭的視線模糊了，太多人在詢問。請稍後再試。",
+    "oracleUnavailable": "神諭沒有回應。請確認金鑰已設定，或稍後再試。",
+    "rateLimited": "慢一點。神諭每分鐘只聽得進這麼多話。",
+    "suggestionLimit": "神諭今天已說得夠多了。",
+    "proposalExpired": "此提案已失效。",
+    "proposalDecided": "此提案已有決定。",
+    "proposalOutdated": "提案之後你的行程已變更，因此無法套用。",
+    "undoExpired": "可復原的 7 天已過。",
+    "alreadyUndone": "此動作已復原。"
   },
   "more": {
     "title": "更多",
@@ -438,6 +504,9 @@
     "motionFull": "完整",
     "motionReduced": "減少",
     "motionOff": "關閉",
+    "aboutMe": "關於我",
+    "aboutMeHelp": "神諭會讀取這段文字作為背景資訊，僅供參考。",
+    "logs": "紀錄",
     "save": "儲存",
     "saving": "儲存中…",
     "saved": "已記錄在案。",

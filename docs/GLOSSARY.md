@@ -36,6 +36,8 @@ Short definitions of terms you'll meet in this project.
 | **publishable key** | The Supabase key that's safe in the browser (`sb_publishable_...`). It can only do what RLS allows. |
 | **PWA** | Progressive Web App: a website you can install on your phone like an app. |
 | **rate limiting** | Capping how often something can be called, to protect a free quota. |
+| **proposal** | A change the Oracle suggests, which does nothing until you approve it. Expires after 48 hours. |
+| **prompt injection** | Text hidden in data, like a note saying "ignore your rules", that tries to give an AI orders. This is why notes are fenced off as data. |
 | **Reckoning** | The screen summarizing what closeout did, shown on your first open after one. Also the name of closeout itself. |
 | **repository (repo)** | The one piece of code that talks to storage for a feature. Swapping it swaps where data lives. (Different from a GitHub repo, which holds the code.) |
 | **Rest Day** | A planned day off, 1 per week, declared before the day starts. Blocks become "rest": no XP, no loss. |
@@ -50,6 +52,8 @@ Short definitions of terms you'll meet in this project.
 | **Tailwind** | A CSS system where you style with small classes. Our colours are defined in `globals.css`. |
 | **template** | One version of your repeating week, such as Semester or Exam Week. Its blocks are the plan, not the real schedule. |
 | **wall-clock time** | A time as read off a clock, like 09:00, with no timezone attached. Blocks are stored this way. |
+| **token** | The unit AI services count text in, about 4 English characters. Free tiers limit tokens per minute. |
+| **tool (AI)** | A specific action the AI may ask the server to run. The AI only asks: the server decides and does the work. |
 | **track** | A course, roadmap or book you're working through. Blocks and tasks can be tagged with one. |
 | **transaction** | A group of database changes that succeed or fail as one, so nothing is left half done. |
 | **VAPID** | Keys that identify your app to the browser's push service, so only it can send you notifications. |

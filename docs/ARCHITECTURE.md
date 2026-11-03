@@ -2,7 +2,7 @@
 
 The big picture of My Schedule Manager: what the pieces are, how data moves, and how it stays private.
 
-Status: **updated at the end of Phase 3.** Parts marked *planned* describe the design for later phases and don't exist yet.
+Status: **updated at the end of Phase 4.** Parts marked *planned* describe the design for later phases and don't exist yet.
 
 ## 1. System diagram
 
@@ -24,7 +24,7 @@ flowchart LR
   end
 
   Google["Google"]
-  Groq["Groq AI (planned)"]
+  Groq["Groq AI"]
   Finnhub["Finnhub US prices (planned)"]
   TW["Taiwan price source (planned)"]
   FX["FX rates source (planned)"]
@@ -34,7 +34,7 @@ flowchart LR
   App --> DB
   Auth <--> Google
   Cron -->|"secret header"| App
-  App -.-> Groq
+  App --> Groq
   App -.-> Finnhub
   App -.-> TW
   App -.-> FX
@@ -116,11 +116,17 @@ flowchart LR
 - **Called by:** the Habits page and dashboard widget.
 - **If it fails:** an error appears and nothing is saved. Nothing else depends on it.
 
-### AI Oracle (planned, Phase 4)
-- **Does:** chat that can read your schedule and propose changes through a fixed list of tools.
-- **Owns:** `ai_conversations`, `ai_messages`, `ai_proposals`, `ai_actions`.
-- **Called by:** the chat panel and the suggestion widget.
-- **If it fails:** you get an in-character message. Everything else keeps working, because nothing depends on the AI.
+### AI Oracle (built)
+- **Does:** chat that reads a short summary of your week and acts only through a fixed list of 13 tools. Reads and goal or task creation happen directly. Schedule changes become proposals you approve, edit or reject.
+- **Owns:** `ai_conversations`, `ai_messages`, `ai_proposals`, `ai_actions`, `ai_suggestions`, `ai_rate_limits`, `weekly_reviews`.
+- **Called by:** the chat panel, through `/api/oracle/chat`, and the suggestion widget.
+- **If it fails:** you get an in-character message, and rate limits retry a couple of times first. Everything else keeps working, because nothing depends on the AI.
+
+### Audit log and Logs page (built)
+- **Does:** records every Oracle action, approval, rejection, undo, closeout and correction, shown in **Settings → Logs**.
+- **Owns:** `audit_log`, which can only be read and added to.
+- **Called by:** the closeout, corrections and every Oracle change.
+- **If it fails:** the page shows an error state. Closeouts write their entry in the same transaction as the closeout itself.
 
 ### Finance (planned, Phase 5)
 - **Does:** expenses, income, budgets and portfolio tracking.
@@ -177,13 +183,14 @@ The first two flows are real today. Anything marked *planned* will be corrected 
 3. That day's summary is recalculated, and the streak is replayed forward from it. XP earned on later days isn't changed.
 4. After 24 hours, the change is refused.
 
-### "I ask the Oracle to move my gym session and approve it" (planned, Phase 4)
-1. You type the request. The server checks you're the owner and within the rate limit.
-2. The server sends a short summary of your week to Groq. Your notes and links are marked as data, not instructions.
-3. The model asks to call `propose_block_changes`. It can't touch the database itself.
-4. The server re-checks that request with Zod and saves it to `ai_proposals`. **Nothing on your schedule has changed yet.**
-5. You see a before-and-after card and tap **Approve**.
-6. A server action applies the change to `block_instances` and writes it to `audit_log`.
+### "I ask the Oracle to move my gym session and approve it"
+1. You type the request. The server checks you're the owner, and counts it against the limit of 20 a minute.
+2. The server sends the rules, a short summary of your week and your last few messages to Groq. Your notes and titles are marked as data, not instructions.
+3. The model asks to call `get_schedule` to find the block's id. It can't touch the database: it can only ask, and the server runs the tool.
+4. The model asks to call `propose_block_changes`. The server checks the request with Zod, and checks the real block: it must exist, be this week, and be unlogged. The "before" comes from your data, not from the model.
+5. It saves that to `ai_proposals`. **Nothing on your schedule has changed yet.**
+6. You see a before-and-after card, and tap **Approve**, **Edit** or **Reject**.
+7. On approval, the server checks the proposal hasn't passed its 48 hours and the block hasn't changed since. Only then does it change `block_instances`, and write it to `audit_log`.
 
 ## 4. Security explained simply
 
@@ -196,8 +203,8 @@ Each layer stops something different, so one failure doesn't expose everything. 
 5. **Server-only secrets (built).** Secrets never get the `NEXT_PUBLIC_` prefix, so they're never sent to the browser. A test scans the browser's code for their names.
 6. **Input validation (built).** Zod rejects anything unexpected before it reaches the database, even if someone crafts a request by hand.
 7. **Cron secret (built).** Cron endpoints are public URLs, so they require a secret header. Without it the answer is 401.
-8. **AI safety (planned, Phase 4).** The model only asks to use fixed tools, which are re-checked on the server. Schedule changes wait for your approval. Text from your notes is treated as data, so a malicious note can't give it orders.
-9. **Rate limiting (planned, Phase 4).** Stops a runaway loop from burning your free AI quota. It lives in Postgres, because serverless memory doesn't last between requests.
+8. **AI safety (built).** The model only asks to use fixed tools, and each request is re-checked on the server. Tools for logging blocks, money or game settings simply don't exist, so no trick can reach them. Schedule changes wait for your approval. Text from your notes is fenced off as data, so a malicious note can't give it orders, and a limit on tool rounds stops a confused model looping.
+9. **Rate limiting (built).** Stops a runaway loop from burning your free AI quota, at 20 requests a minute. It lives in Postgres, because serverless memory doesn't last between requests.
 10. **Security headers (built).**
     - CSP tells the browser to run only scripts that carry this request's random nonce, which limits damage from injected code.
     - `X-Frame-Options` stops other sites embedding the app to trick your clicks.
@@ -208,7 +215,7 @@ Each layer stops something different, so one failure doesn't expose everything. 
 13. **Backup (planned, Phase 7).** JSON and CSV export with JSON restore, so a mistake or lost account doesn't mean lost data.
 
 ### Preview mode
-`AUTH_PREVIEW=true` shows the app without a login, so it can be tested before accounts exist. Your data isn't involved: schedule and game screens use a temporary in-memory store that disappears when the server stops. A preview-only route, `/api/dev/preview-seed`, resets that store so tests can reach things that normally depend on a real midnight. Both only work outside production builds, and tests prove a production build ignores them.
+`AUTH_PREVIEW=true` shows the app without a login, so it can be tested before accounts exist. Your data isn't involved: screens use a temporary in-memory store that disappears when the server stops, and a scripted stand-in plays the AI. A preview-only route, `/api/dev/preview-seed`, resets that store so tests can reach things that normally depend on a real midnight. Both only work outside production builds, and tests prove a production build ignores them.
 
 ## 5. Key design choices
 
@@ -220,5 +227,7 @@ Each layer stops something different, so one failure doesn't expose everything. 
 - **Generation is lazy.** Nothing runs in the background. Blocks are created when you open a schedule page, which suits a free plan with limited scheduled jobs.
 - **The ledger stores what really happened.** If a gain is capped because Power is already 100, the row records the amount that was actually applied. That's what lets the totals be rebuilt exactly by adding up the rows.
 - **Each database call is a network trip, so calls are kept few.** A page load remembers each read for that one request, closeout skips its work when there's nothing to close, and heavy libraries (charts, calendar, dragging) only download when they're on screen. Keep the Vercel functions in the same region as the database, or every call crosses an ocean.
+- **The AI provider is a setting.** The app speaks the common OpenAI chat format, so changing `AI_PROVIDER`, `AI_BASE_URL` and `AI_MODEL` switches provider with no code change. The default is `openai/gpt-oss-20b` on Groq, because it supports tools on the free tier and has no retirement date.
+- **The Oracle is kept deliberately short-winded.** Free tiers allow few tokens per minute, so it gets a capped summary, its last 6 messages, and one tool request per step.
 - **Charts follow fixed rules.** Colours were checked with a colour-blindness validator rather than chosen by eye. A learning track keeps its colour, there's only ever one axis, and every chart has a table view.
 - **Every game change is one transaction.** The server can't make several database calls safely in a row, because a crash midway would leave things half done. So one Postgres function, `apply_game_commit`, does it all. It also checks a version number, so two tabs can't overwrite each other's changes.

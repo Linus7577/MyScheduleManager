@@ -1,4 +1,7 @@
+import Link from "next/link";
+import { ChevronRight, ScrollText } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
+import { getScheduleContext } from "@/features/schedule/context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { isLocale, DEFAULT_LOCALE } from "@/config/app.config";
@@ -12,6 +15,8 @@ export default async function SettingsPage() {
   const savedLocale = await getLocale();
   const timezone = await getOwnerTimezone();
   const motion = await getMotionLevel();
+  const ctx = await getScheduleContext();
+  const aboutMe = await ctx.repo.getAboutMe();
 
   const zones = Intl.supportedValuesOf("timeZone");
   const timezones = zones.includes(timezone) ? zones : [timezone, ...zones];
@@ -26,9 +31,19 @@ export default async function SettingsPage() {
             timezone={timezone}
             timezones={timezones}
             motion={motion}
+            aboutMe={aboutMe}
           />
         </CardContent>
       </Card>
+
+      <Link
+        href="/settings/logs"
+        className="glow-card flex h-14 items-center gap-3 rounded-xl bg-card px-4 text-sm ring-1 ring-foreground/10"
+      >
+        <ScrollText className="size-5 text-crimson-400" aria-hidden="true" />
+        {t("logs")}
+        <ChevronRight className="ml-auto size-4 text-muted-foreground" aria-hidden="true" />
+      </Link>
 
       {!owner.preview && (
         <Card>

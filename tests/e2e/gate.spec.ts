@@ -57,6 +57,12 @@ test.describe("production gate", () => {
     expect(wrong.status()).toBe(401);
   });
 
+  test("the Oracle's endpoint refuses a signed-out visitor", async ({ request }) => {
+    const response = await request.post("/api/oracle/chat", { data: { text: "Hello" }, maxRedirects: 0 });
+    expect(response.status()).toBe(307);
+    expect(response.headers().location).toContain("/login");
+  });
+
   test("the preview-only seed route doesn't exist in production", async ({ request }) => {
     const signedOut = await request.get("/api/dev/preview-seed?today=1", { maxRedirects: 0 });
     expect(signedOut.status()).toBe(307);
@@ -87,7 +93,7 @@ test.describe("production gate", () => {
     await page.waitForLoadState("networkidle");
 
     expect(sources.length).toBeGreaterThan(0);
-    for (const name of ["SUPABASE_SECRET_KEY", "CRON_SECRET", "ALLOWED_EMAIL"]) {
+    for (const name of ["SUPABASE_SECRET_KEY", "CRON_SECRET", "ALLOWED_EMAIL", "GROQ_API_KEY"]) {
       expect(sources.join("\n")).not.toContain(name);
     }
   });

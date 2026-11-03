@@ -94,7 +94,7 @@ Vercel picks up the daily job from `vercel.json` automatically. **Why it matters
 ## Later phases
 You don't need these yet. They're here so this file stays complete.
 
-- **Phase 4, Groq:** create a free key at console.groq.com. Set `GROQ_API_KEY`, `AI_PROVIDER`, `AI_BASE_URL` and `AI_MODEL`. **Why:** this powers the Oracle, and the settings let you change provider without a code change.
+- **Phase 4, Groq:** create a free key at console.groq.com, under **API Keys**, and add it as `GROQ_API_KEY` to `.env.local` and to Vercel. **Why:** this powers the Oracle. `AI_PROVIDER`, `AI_BASE_URL` and `AI_MODEL` are optional, with Groq as the default, and they let you change provider without a code change. Groq's model list changes over time, so if the Oracle stops answering, check `AI_MODEL` against their docs first.
 - **Phase 5, Finnhub:** create a free key at finnhub.io and set `FINNHUB_API_KEY`. **Why:** US stock prices.
 - **Phase 7, VAPID keys:** these identify your app to the browser's push service, so only you can send it notifications. The exact command is added when that phase is built.
 

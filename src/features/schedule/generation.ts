@@ -1,9 +1,10 @@
 import type { CommandRepo } from "@/features/command/repo";
 import type { GameRepo } from "@/features/game/repo";
+import type { OracleRepo } from "@/features/oracle/repo";
 import { addDays, buildInstanceRows, generationEnd } from "./logic";
 import type { ScheduleRepo } from "./repo";
 
-export type AppRepo = ScheduleRepo & GameRepo & CommandRepo;
+export type AppRepo = ScheduleRepo & GameRepo & CommandRepo & OracleRepo;
 
 export type ScheduleContext = {
   repo: AppRepo;
@@ -12,6 +13,8 @@ export type ScheduleContext = {
   now?: Date;
   /** The owner's local time now, as YYYY-MM-DDTHH:mm:ss. Used to wait for blocks running past midnight. */
   wallClock?: string;
+  /** The language to write generated text in, where the owner's own message doesn't set one. */
+  locale?: string;
 };
 
 export async function generateInstances(ctx: ScheduleContext, from: string, to: string): Promise<void> {

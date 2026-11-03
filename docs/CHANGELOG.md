@@ -1,5 +1,31 @@
 # Changelog
 
+## What changed in Phase 4: The Oracle
+
+**Built**
+- Chat panel: a full-screen sheet on phones and a side drawer on desktop, with replies appearing as they're written, in the language of your message.
+- Provider layer: switch AI provider by changing settings. Defaults to `openai/gpt-oss-20b` on Groq. Rate limits retry with backoff, then show an in-character message.
+- The 13 tools from the spec, with every request re-checked on the server.
+- Proposals: before-and-after approval cards with Approve, Edit and Reject, expiring after 48 hours.
+- Automatic actions: done cards with Undo, available for 7 days.
+- Suggestion widget: regenerated at most 3 times a day, and cached.
+- Rate limit of 20 requests a minute, in Postgres.
+- Settings → Logs, showing the audit log, and the "About me" note for the Oracle.
+- New tables in `supabase/migrations/20261103040000_oracle.sql`, all with RLS.
+
+**Decisions made**
+- As planned, the Oracle never sees money. The weekly review's spending summary, in Phase 7, will be calculated by the app.
+- The Oracle can't change a block that's logged, in the past, outside this week, or tied to a calendar event.
+- A proposal is refused at approval if its block has changed since, rather than overwriting what you did.
+- Undoing a created goal or project also removes anything you've added under it since.
+- The suggestion widget waits for you to ask rather than generating on its own, to save quota.
+- A suggestion is written in the language the app is set to.
+
+**Not done yet**
+- It has never talked to the real Groq service, because that needs your API key. The tests use a stand-in, and the free-tier limits on Groq's own pages disagree, so real use may need tuning.
+- Saving through the Oracle hasn't run on your real database.
+- Not deployed.
+
 ## What changed in Phase 3: Command Center
 
 **Built**

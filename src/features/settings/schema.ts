@@ -6,6 +6,7 @@ export const settingsSchema = z.strictObject({
   locale: z.enum(LOCALES),
   timezone: z.string().min(1).max(64).refine(isValidTimeZone),
   motion: z.enum(MOTION_LEVELS),
+  about_me: z.string().trim().max(2000),
 });
 
 export type SaveSettingsStatus = "idle" | "saved" | "savedPreview" | "invalid" | "failed";

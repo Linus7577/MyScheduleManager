@@ -330,6 +330,94 @@ describe("command center tables", () => {
   });
 });
 
+describe("Oracle tables", () => {
+  const TABLES = [
+    "ai_conversations",
+    "ai_messages",
+    "ai_proposals",
+    "ai_actions",
+    "ai_suggestions",
+    "ai_rate_limits",
+    "weekly_reviews",
+  ];
+  const CONVERSATION = "30000000-0000-0000-0000-000000000001";
+
+  beforeAll(async () => {
+    await db.query(`insert into public.ai_conversations (id, user_id) values ($1, $2)`, [CONVERSATION, OWNER]);
+    await db.query(`insert into public.ai_messages (user_id, conversation_id, role, content) values ($1, $2, 'user', 'Hi')`, [OWNER, CONVERSATION]);
+    await db.query(
+      `insert into public.ai_proposals (user_id, conversation_id, kind, summary, changes, expires_at)
+       values ($1, $2, 'block_changes', 'Move', '[]', now() + interval '48 hours')`,
+      [OWNER, CONVERSATION]
+    );
+    await db.query(
+      `insert into public.ai_actions (user_id, conversation_id, tool, summary, undo, undo_until)
+       values ($1, $2, 'create_goal', 'G', '{}', now() + interval '7 days')`,
+      [OWNER, CONVERSATION]
+    );
+    await db.query(`insert into public.ai_suggestions (user_id, date, text) values ($1, '2026-11-03', 'Do it')`, [OWNER]);
+    await db.query(`insert into public.ai_rate_limits (user_id, window_start, count) values ($1, now(), 1)`, [OWNER]);
+    await db.query(`insert into public.weekly_reviews (user_id, week_start, oracle_text) values ($1, '2026-11-02', 'Good')`, [OWNER]);
+  });
+
+  it.each(TABLES)("%s is invisible to the anon key", async (table) => {
+    await asUser(null, "anon", async () => {
+      await expect(db.query(`select * from public.${table}`)).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it.each(TABLES)("%s hides the owner's rows from another user", async (table) => {
+    await asUser(STRANGER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows).toEqual([]);
+      expect((await db.query(`delete from public.${table}`)).affectedRows).toBe(0);
+    });
+  });
+
+  it.each(TABLES)("%s is readable by its owner", async (table) => {
+    await asUser(OWNER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("refuses an unknown proposal status or kind", async () => {
+    await expect(db.query(`update public.ai_proposals set status = 'maybe'`)).rejects.toThrow(/check constraint/);
+    await expect(db.query(`update public.ai_proposals set kind = 'finance'`)).rejects.toThrow(/check constraint/);
+  });
+
+  describe("rate limit counter", () => {
+    const RATE_USER = "00000000-0000-0000-0000-00000000000c";
+    const bump = async (max: number) =>
+      (
+        await db.query<{ result: boolean }>("select public.bump_ai_rate_limit($1, $2) as result", [RATE_USER, max])
+      ).rows[0].result;
+
+    beforeAll(async () => {
+      await db.query(`insert into auth.users (id, email) values ($1, 'rate@example.com')`, [RATE_USER]);
+    });
+
+    it("allows up to the limit, then refuses", async () => {
+      await asUser(RATE_USER, "authenticated", async () => {
+        expect(await bump(2)).toBe(true);
+        expect(await bump(2)).toBe(true);
+        expect(await bump(2)).toBe(false);
+      });
+    });
+
+    it("can't be called by the anon key", async () => {
+      await asUser(null, "anon", async () => {
+        await expect(bump(2)).rejects.toThrow(/permission denied/);
+      });
+    });
+
+    it("starts again in a new minute", async () => {
+      await db.query(`update public.ai_rate_limits set window_start = now() - interval '5 minutes' where user_id = $1`, [RATE_USER]);
+      await asUser(RATE_USER, "authenticated", async () => {
+        expect(await bump(2)).toBe(true);
+      });
+    });
+  });
+});
+
 describe("game tables and the atomic commit", () => {
   const GAME_TABLES = ["game_state", "game_ledger", "closed_days", "daily_summaries"];
 

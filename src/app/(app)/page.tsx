@@ -16,6 +16,7 @@ import {
 import { getDashboardLayouts } from "@/features/command/service";
 import { Avatar } from "@/features/game/components/avatar";
 import { ParticleCanvas } from "@/features/game/components/particle-canvas";
+import { SuggestionWidget } from "@/features/oracle/components/suggestion-widget";
 import { getGameView } from "@/features/game/service";
 import { getScheduleContext } from "@/features/schedule/context";
 import { ensureLoopReady } from "@/features/schedule/service";
@@ -36,11 +37,12 @@ export default async function HomePage() {
 
   await ensureLoopReady(ctx, [templates("seedSemester"), templates("seedExam"), templates("seedHoliday")]);
 
-  const [game, motion, layouts, instances] = await Promise.all([
+  const [game, motion, layouts, instances, suggestion] = await Promise.all([
     getGameView(ctx),
     getMotionLevel(),
     getDashboardLayouts(ctx),
     ctx.repo.listInstances(ctx.today, ctx.today),
+    ctx.repo.getSuggestion(ctx.today),
   ]);
   const blocks = instances.filter((block) => !block.is_cancelled);
 
@@ -108,7 +110,7 @@ export default async function HomePage() {
           habits: <HabitsWidget ctx={ctx} />,
           spending: <SealedWidget phase={5} />,
           portfolio: <SealedWidget phase={5} />,
-          oracle: <SealedWidget phase={4} />,
+          oracle: <SuggestionWidget suggestion={suggestion} />,
           events: <EventsWidget ctx={ctx} />,
           weekly: <WeeklyWidget ctx={ctx} />,
         }}

@@ -10,7 +10,13 @@ import type { SaveSettingsState } from "./schema";
 const fieldClass =
   "h-11 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none";
 
-export function SettingsForm(props: { locale: Locale; timezone: string; timezones: string[]; motion: MotionLevel }) {
+export function SettingsForm(props: {
+  locale: Locale;
+  timezone: string;
+  timezones: string[];
+  motion: MotionLevel;
+  aboutMe: string;
+}) {
   const t = useTranslations("settings");
   const [state, action, pending] = useActionState<SaveSettingsState, FormData>(saveSettings, { status: "idle" });
 
@@ -49,6 +55,21 @@ export function SettingsForm(props: { locale: Locale; timezone: string; timezone
           <option value="reduced">{t("motionReduced")}</option>
           <option value="off">{t("motionOff")}</option>
         </select>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="about_me" className="text-sm font-medium">
+          {t("aboutMe")}
+        </label>
+        <textarea
+          id="about_me"
+          name="about_me"
+          rows={3}
+          maxLength={2000}
+          defaultValue={props.aboutMe}
+          className="w-full rounded-lg border border-input bg-surface-2 px-3 py-2 text-sm text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        />
+        <p className="text-xs text-muted-foreground">{t("aboutMeHelp")}</p>
       </div>
 
       <div className="flex items-center gap-3">

@@ -76,7 +76,16 @@ export type ScheduleErrorCode =
   | "dayClosed"
   | "correctionExpired"
   | "correctionNeedsStatus"
-  | "checkinInFuture";
+  | "checkinInFuture"
+  | "oracleBusy"
+  | "oracleUnavailable"
+  | "rateLimited"
+  | "suggestionLimit"
+  | "proposalExpired"
+  | "proposalDecided"
+  | "proposalOutdated"
+  | "undoExpired"
+  | "alreadyUndone";
 
 export type ActionResult = { ok: true } | { ok: false; code: ScheduleErrorCode };
 

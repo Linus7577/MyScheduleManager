@@ -25,13 +25,13 @@ export interface CommandRepo {
   deleteGoal(id: string): Promise<void>;
 
   listProjects(): Promise<Project[]>;
-  createProject(fields: ProjectFields): Promise<void>;
+  createProject(fields: ProjectFields): Promise<Project>;
   updateProject(id: string, fields: ProjectFields): Promise<void>;
   deleteProject(id: string): Promise<void>;
 
   listTasks(): Promise<Task[]>;
   listTasksDue(from: string, to: string): Promise<Task[]>;
-  createTask(fields: TaskFields): Promise<void>;
+  createTask(fields: TaskFields): Promise<Task>;
   updateTask(id: string, fields: TaskFields): Promise<void>;
   deleteTask(id: string): Promise<void>;
 

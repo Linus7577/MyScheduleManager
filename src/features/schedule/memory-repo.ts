@@ -11,6 +11,7 @@ import type {
   WidgetSetting,
 } from "@/features/command/types";
 import type { AuditEntry, ClosedDay, DailySummary, GameState, LedgerEntry } from "@/features/game/types";
+import type { LoggedAudit, OracleAction, OracleMessage, Proposal, Suggestion } from "@/features/oracle/types";
 import type { AppRepo } from "./generation";
 import type {
   BlockInstance,
@@ -42,6 +43,15 @@ type Store = {
   habits: Habit[];
   checkins: HabitCheckin[];
   layouts: Partial<Record<DashboardDevice, WidgetSetting[]>>;
+  conversations: string[];
+  messages: OracleMessage[];
+  proposals: Proposal[];
+  actions: OracleAction[];
+  suggestions: Suggestion[];
+  rateWindow: { minute: number; count: number };
+  reviews: Record<string, string>;
+  loggedAudit: LoggedAudit[];
+  aboutMe: string;
 };
 
 const emptyStore = (): Store => ({
@@ -65,13 +75,112 @@ const emptyStore = (): Store => ({
   habits: [],
   checkins: [],
   layouts: {},
+  conversations: [],
+  messages: [],
+  proposals: [],
+  actions: [],
+  suggestions: [],
+  rateWindow: { minute: 0, count: 0 },
+  reviews: {},
+  loggedAudit: [],
+  aboutMe: "",
 });
 
 const newId = () => crypto.randomUUID();
 
 /** Stands in for Supabase in tests and login-free preview. Nothing here is ever saved. */
 export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
+  const logAudit = (entry: AuditEntry) => {
+    store.audit.push(entry);
+    store.loggedAudit.unshift({ ...entry, id: newId(), created_at: new Date().toISOString() });
+  };
+
   return {
+    async getLatestConversationId() {
+      return store.conversations.at(-1) ?? null;
+    },
+    async createConversation() {
+      const id = newId();
+      store.conversations.push(id);
+      return id;
+    },
+    async listMessages(conversationId, limit) {
+      return store.messages.filter((message) => message.conversation_id === conversationId).slice(-limit);
+    },
+    async addMessage(conversationId, role, content) {
+      store.messages.push({ id: newId(), conversation_id: conversationId, role, content, created_at: new Date().toISOString() });
+    },
+
+    async createProposal(proposal) {
+      const created = { ...proposal, id: newId(), status: "pending", decided_at: null, created_at: new Date().toISOString() } as Proposal;
+      store.proposals.push(created);
+      return created;
+    },
+    async getProposal(id) {
+      return store.proposals.find((proposal) => proposal.id === id) ?? null;
+    },
+    async listProposals(conversationId) {
+      return store.proposals.filter((proposal) => proposal.conversation_id === conversationId);
+    },
+    async updateProposal(id, patch) {
+      store.proposals = store.proposals.map((proposal) =>
+        proposal.id === id ? ({ ...proposal, ...patch, changes: patch.changes ?? proposal.changes } as Proposal) : proposal
+      );
+    },
+
+    async createAction(action) {
+      const created = { ...action, id: newId(), undone_at: null, created_at: new Date().toISOString() };
+      store.actions.push(created);
+      return created;
+    },
+    async getAction(id) {
+      return store.actions.find((action) => action.id === id) ?? null;
+    },
+    async listActions(conversationId) {
+      return store.actions.filter((action) => action.conversation_id === conversationId);
+    },
+    async markActionUndone(id, at) {
+      store.actions = store.actions.map((action) => (action.id === id ? { ...action, undone_at: at } : action));
+    },
+
+    async bumpRateLimit(maxPerMinute, now) {
+      const minute = Math.floor(now.getTime() / 60_000);
+      store.rateWindow = {
+        minute,
+        count: store.rateWindow.minute === minute ? store.rateWindow.count + 1 : 1,
+      };
+      return store.rateWindow.count <= maxPerMinute;
+    },
+
+    async getSuggestion(date) {
+      return store.suggestions.find((suggestion) => suggestion.date === date) ?? null;
+    },
+    async saveSuggestion(suggestion) {
+      store.suggestions = [...store.suggestions.filter((existing) => existing.date !== suggestion.date), suggestion];
+    },
+
+    async getWeeklyReview(weekStart) {
+      return store.reviews[weekStart] ?? null;
+    },
+    async saveWeeklyReview(weekStart, text) {
+      if (text === null) delete store.reviews[weekStart];
+      else store.reviews[weekStart] = text;
+    },
+
+    async addAudit(entry) {
+      logAudit(entry);
+    },
+    async listAudit(limit) {
+      return store.loggedAudit.slice(0, limit);
+    },
+
+    async getAboutMe() {
+      return store.aboutMe;
+    },
+    async setAboutMe(text) {
+      store.aboutMe = text;
+    },
+
     async listGoals() {
       return [...store.goals];
     },
@@ -94,7 +203,9 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
       return [...store.projects];
     },
     async createProject(fields) {
-      store.projects.push({ ...fields, id: newId() });
+      const project = { ...fields, id: newId() };
+      store.projects.push(project);
+      return project;
     },
     async updateProject(id, fields) {
       store.projects = store.projects.map((project) => (project.id === id ? { ...project, ...fields } : project));
@@ -111,7 +222,9 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
       return store.tasks.filter((task) => task.due_date && task.due_date >= from && task.due_date <= to);
     },
     async createTask(fields) {
-      store.tasks.push({ ...fields, id: newId() });
+      const task = { ...fields, id: newId() };
+      store.tasks.push(task);
+      return task;
     },
     async updateTask(id, fields) {
       store.tasks = store.tasks.map((task) => (task.id === id ? { ...task, ...fields } : task));
@@ -242,7 +355,7 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
           store.summaries.push(summary);
         }
       }
-      store.audit.push(...commit.audit);
+      commit.audit.forEach(logAudit);
       return true;
     },
     async setSeenProgress(level, tier) {

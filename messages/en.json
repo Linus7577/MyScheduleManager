@@ -67,6 +67,67 @@
     "skip": "Skip",
     "continue": "Continue"
   },
+  "oracle": {
+    "title": "The Oracle",
+    "close": "Close the Oracle",
+    "empty": "Speak. The Oracle sees your week, your oaths and your failures.",
+    "placeholder": "Ask the Oracle…",
+    "messageLabel": "Your message",
+    "send": "Send",
+    "thinking": "The Oracle considers…",
+    "proposalLabel": "A proposal waiting for your decision",
+    "proposalBlocks": "Proposal: this week only",
+    "proposalTemplate": "Proposal: your repeating template",
+    "willBeRemoved": "Will be removed",
+    "approve": "Approve",
+    "edit": "Edit",
+    "reject": "Reject",
+    "editProposal": "Edit and approve",
+    "editHint": "Saving approves the proposal with your changes.",
+    "fieldTitle": "Title",
+    "fieldStart": "Start",
+    "fieldEnd": "End",
+    "status": {
+      "approved": "Approved and applied",
+      "rejected": "Rejected",
+      "expired": "Expired after 48 hours"
+    },
+    "actionLabel": "Something the Oracle did",
+    "undo": "Undo",
+    "undone": "Undone",
+    "tools": {
+      "create_goal": "Goal created",
+      "create_project": "Project created",
+      "create_task": "Task created",
+      "update_progress": "Progress updated",
+      "write_weekly_review": "Weekly review written"
+    },
+    "noSuggestion": "The Oracle has not spoken today.",
+    "seekCounsel": "Seek counsel",
+    "askAgain": "Ask again",
+    "suggestionsLeft": "{count, plural, =0 {No more today} one {# left today} other {# left today}}",
+    "openChat": "Speak with the Oracle"
+  },
+  "logs": {
+    "title": "Logs",
+    "back": "Settings",
+    "intro": "Everything the Oracle did, what you approved or undid, and each day's closeout.",
+    "empty": "Nothing has been written yet.",
+    "actions": {
+      "day_closeout": "Day closed",
+      "correction": "Closed day corrected",
+      "ai_action": "The Oracle acted",
+      "ai_action_undone": "Oracle action undone",
+      "proposal_created": "The Oracle proposed a change",
+      "proposal_approved": "Proposal approved",
+      "proposal_rejected": "Proposal rejected"
+    },
+    "actors": {
+      "owner": "You",
+      "oracle": "The Oracle",
+      "system": "The system"
+    }
+  },
   "battleLog": {
     "title": "Battle Log",
     "back": "More",
@@ -409,11 +470,16 @@
     "dayClosed": "That day has been closed. It can only be corrected from the Loop, within 24 hours.",
     "correctionExpired": "The 24 hours for correcting this day have passed.",
     "correctionNeedsStatus": "A closed day's block must be done, partial or skipped.",
-    "checkinInFuture": "That day hasn't come yet."
-  },
-  "oracle": {
-    "title": "The Oracle",
-    "flavor": "The Oracle sleeps. Do not wake it before its hour."
+    "checkinInFuture": "That day hasn't come yet.",
+    "oracleBusy": "The Oracle's sight is clouded. Too many have asked. Try again in a moment.",
+    "oracleUnavailable": "The Oracle does not answer. Check that its key is set, or try again later.",
+    "rateLimited": "Slow down. The Oracle hears only so many words a minute.",
+    "suggestionLimit": "The Oracle has spoken enough today.",
+    "proposalExpired": "This proposal has expired.",
+    "proposalDecided": "This proposal has already been decided.",
+    "proposalOutdated": "Your schedule has changed since this was proposed, so it can't be applied.",
+    "undoExpired": "The 7 days for undoing this have passed.",
+    "alreadyUndone": "This has already been undone."
   },
   "more": {
     "title": "More",
@@ -438,6 +504,9 @@
     "motionFull": "Full",
     "motionReduced": "Reduced",
     "motionOff": "Off",
+    "aboutMe": "About me",
+    "aboutMeHelp": "The Oracle reads this for context, as information only.",
+    "logs": "Logs",
     "save": "Save",
     "saving": "Saving…",
     "saved": "So it is written.",
