@@ -39,14 +39,14 @@ git push -u origin main
 ## 3. Create the Supabase project
 **Why:** Supabase is the database and the sign-in system.
 
-1. At supabase.com, create a project. Pick a region near you, such as Tokyo or Singapore, and save the database password somewhere safe.
+1. At supabase.com, create a project. Under **Region**, click **Need a specific region?** and pick **Northeast Asia (Tokyo)**; don't leave it on Auto. **Why:** every page makes several database calls, and a project's region can't be changed later. This app's first project landed in Ireland, which made pages take seconds from Taiwan. The app doesn't use the database password, and you can reset it later under **Project Settings → Database**.
 2. Open **SQL Editor**. For each file in `supabase/migrations/`, oldest first, paste the whole file and run it. **Why:** these create the tables and their security rules.
 3. In the SQL Editor, run this with your own Gmail address. **Why:** it tells the sign-up gate who may create an account.
    ```sql
    insert into private.signup_allowlist (email) values ('you@gmail.com');
    ```
 4. Open **Authentication → Hooks**, add a **Before User Created** hook, choose **Postgres**, and select `public.hook_before_user_created`. **Why:** without it, a stranger could sign in straight against Supabase. It's listed for the Free plan in Supabase's docs, though their pricing page doesn't mention it. If you can't enable it, do step 5.7 instead.
-5. Open **Project Settings → API Keys** and note the **publishable** key and the **secret** key. If you only see old `eyJ...` keys, create the new ones there. **Why:** Supabase is retiring the old `anon` and `service_role` keys by the end of 2026.
+5. Open **Project Settings → API Keys** and note the **publishable** key and the **secret** key. Click the eye icon to reveal the whole secret key first, because the page shows a shortened version that won't work. If you only see old `eyJ...` keys, create the new ones there. **Why:** Supabase is retiring the old `anon` and `service_role` keys by the end of 2026.
 
 ## 4. Set up Google sign-in
 **Why:** Google proves it's you, so the app never handles a password.
@@ -80,7 +80,7 @@ Run `npm run dev` and sign in. You should reach the Home page.
 1. At vercel.com, sign in with GitHub, choose **Add New → Project**, and import your repository.
 2. Before deploying, add the five variables from `.env.local` under **Environment Variables**. Don't add `AUTH_PREVIEW`.
 3. Deploy, and copy the live address, such as `https://your-app.vercel.app`.
-   - **Set the function region to match Supabase:** in Vercel's **Settings → Functions**, pick the region closest to your Supabase project. **Why:** every page makes several database calls, and each one crosses that distance. In the same region they take a few milliseconds.
+   - **The function region is already set:** `vercel.json` says `hnd1`, which is Tokyo, to match the database. **Why:** every page makes several database calls, and each one crosses that distance. If you ever pick a different database region, change this to match.
 4. Back in Supabase's **URL Configuration**, set **Site URL** to that address and add `https://your-app.vercel.app/auth/callback` to **Redirect URLs**. **Why:** so Google sign-in returns to the live app and not to localhost.
 
 Vercel picks up the daily job from `vercel.json` automatically. **Why it matters:** it keeps Supabase from pausing after a quiet week.

@@ -4,6 +4,8 @@
 
 - **Blocks in an inactive template:** the template editor now warns when a template isn't active, with a Make active button. The Loop also says when your blocks are in a different template from the active one. Before, blocks added there silently never appeared, so they could never earn XP.
 - **Editing mistaken for adding:** the edit dialog now says saving replaces the block, and offers Save as a new block to keep the original.
+- **Slow pages:** the database was in Ireland, far from Taiwan, and Supabase can't move a project. The app now uses a new project in Tokyo, and `vercel.json` runs the app in Tokyo too. Starting over reset the XP and test blocks from early testing.
+- **Crash on the very first page:** a new account's first page failed once and worked after a refresh, because Next.js answered the read-back of a new row from memory. Database reads on a page now always ask the database.
 
 ## What changed in Phase 4: The Oracle
 
