@@ -13,7 +13,7 @@ import timeGridPlugin from "@fullcalendar/react/timegrid";
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/classic/theme.css";
 import "@fullcalendar/react/themes/classic/palette.css";
-import { Plus } from "lucide-react";
+import { ListTodo, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { wallClockInTimeZone } from "@/lib/time/today";
@@ -134,7 +134,8 @@ export function CalendarView(props: { timeZone: string; locale: string; today: s
                   className="h-3 w-1 shrink-0 rounded-full"
                   style={{ backgroundColor: CATEGORY_COLOR[item.category] }}
                 />
-                {Icon &&<Icon className={cn("size-3 shrink-0", meta?.colorClass)} aria-hidden="true" />}
+                {Icon && <Icon className={cn("size-3 shrink-0", meta?.colorClass)} aria-hidden="true" />}
+                {item.kind === "task" && <ListTodo className="size-3 shrink-0" aria-hidden="true" />}
                 {info.timeText && <span className="shrink-0 tabular-nums">{info.timeText}</span>}
                 <span className="truncate">{item.title}</span>
               </span>
@@ -149,7 +150,7 @@ export function CalendarView(props: { timeZone: string; locale: string; today: s
           }}
           eventClick={(info) => {
             const item = info.event.extendedProps.item as FeedItem;
-            if (item.kind === "block") router.push(`/loop?date=${item.date}`);
+            if (item.link) router.push(item.link);
             else setDraft({ event: item.event, date: item.date, startTime: null });
           }}
         />

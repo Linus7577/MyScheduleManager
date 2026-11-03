@@ -242,6 +242,94 @@ describe("schedule tables", () => {
   });
 });
 
+describe("command center tables", () => {
+  const TABLES = [
+    "goals",
+    "projects",
+    "tasks",
+    "learning_tracks",
+    "learning_units",
+    "progress_snapshots",
+    "habits",
+    "habit_checkins",
+    "widget_layouts",
+  ];
+  const GOAL = "20000000-0000-0000-0000-000000000001";
+  const PROJECT = "20000000-0000-0000-0000-000000000002";
+  const TRACK = "20000000-0000-0000-0000-000000000003";
+  const HABIT = "20000000-0000-0000-0000-000000000004";
+
+  beforeAll(async () => {
+    await db.query(`insert into public.goals (id, user_id, title) values ($1, $2, 'Goal')`, [GOAL, OWNER]);
+    await db.query(`insert into public.projects (id, user_id, goal_id, title) values ($1, $2, $3, 'Project')`, [PROJECT, OWNER, GOAL]);
+    await db.query(`insert into public.learning_tracks (id, user_id, kind, title) values ($1, $2, 'book', 'Book')`, [TRACK, OWNER]);
+    await db.query(`insert into public.learning_units (user_id, track_id, title) values ($1, $2, 'Unit')`, [OWNER, TRACK]);
+    await db.query(`insert into public.tasks (user_id, project_id, title, track_id) values ($1, $2, 'Task', $3)`, [OWNER, PROJECT, TRACK]);
+    await db.query(
+      `insert into public.progress_snapshots (user_id, date, entity_type, entity_id, percent) values ($1, '2026-11-03', 'goal', $2, 10)`,
+      [OWNER, GOAL]
+    );
+    await db.query(`insert into public.habits (id, user_id, title) values ($1, $2, 'Gym')`, [HABIT, OWNER]);
+    await db.query(`insert into public.habit_checkins (user_id, habit_id, date) values ($1, $2, '2026-11-03')`, [OWNER, HABIT]);
+    await db.query(`insert into public.widget_layouts (user_id, device, layout) values ($1, 'mobile', '[]')`, [OWNER]);
+  });
+
+  it.each(TABLES)("%s is invisible to the anon key", async (table) => {
+    await asUser(null, "anon", async () => {
+      await expect(db.query(`select * from public.${table}`)).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it.each(TABLES)("%s hides the owner's rows from another user", async (table) => {
+    await asUser(STRANGER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows).toEqual([]);
+      expect((await db.query(`delete from public.${table}`)).affectedRows).toBe(0);
+    });
+  });
+
+  it.each(TABLES)("%s is readable by its owner", async (table) => {
+    await asUser(OWNER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("allows one check-in per habit per day", async () => {
+    await expect(
+      db.query(`insert into public.habit_checkins (user_id, habit_id, date) values ($1, $2, '2026-11-03')`, [OWNER, HABIT])
+    ).rejects.toThrow(/duplicate key/);
+  });
+
+  it("replaces a day's snapshot rather than adding a second one", async () => {
+    await expect(
+      db.query(
+        `insert into public.progress_snapshots (user_id, date, entity_type, entity_id, percent) values ($1, '2026-11-03', 'goal', $2, 20)`,
+        [OWNER, GOAL]
+      )
+    ).rejects.toThrow(/duplicate key/);
+  });
+
+  it("refuses a percent outside 0 to 100", async () => {
+    await expect(
+      db.query(`update public.learning_units set percent = 101 where track_id = $1`, [TRACK])
+    ).rejects.toThrow(/check constraint/);
+    await expect(
+      db.query(`update public.projects set manual_percent = -1 where id = $1`, [PROJECT])
+    ).rejects.toThrow(/check constraint/);
+  });
+
+  it("deleting a track keeps tagged tasks, without the tag", async () => {
+    await db.query(`delete from public.learning_tracks where id = $1`, [TRACK]);
+    const { rows } = await db.query<{ track_id: string | null }>(`select track_id from public.tasks where project_id = $1`, [PROJECT]);
+    expect(rows).toEqual([{ track_id: null }]);
+  });
+
+  it("deleting a goal removes its projects and tasks", async () => {
+    await db.query(`delete from public.goals where id = $1`, [GOAL]);
+    expect((await db.query(`select * from public.projects where id = $1`, [PROJECT])).rows).toEqual([]);
+    expect((await db.query(`select * from public.tasks where project_id = $1`, [PROJECT])).rows).toEqual([]);
+  });
+});
+
 describe("game tables and the atomic commit", () => {
   const GAME_TABLES = ["game_state", "game_ledger", "closed_days", "daily_summaries"];
 

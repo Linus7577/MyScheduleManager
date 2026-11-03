@@ -12,7 +12,8 @@ export default async function TemplateEditorPage({ params }: { params: Promise<{
   if (!z.uuid().safeParse(id).success) notFound();
 
   const t = await getTranslations("templates");
-  const editor = await getTemplateEditor(await getScheduleContext(), id);
+  const ctx = await getScheduleContext();
+  const [editor, tracks] = await Promise.all([getTemplateEditor(ctx, id), ctx.repo.listTracks()]);
   if (!editor) notFound();
 
   return (
@@ -25,7 +26,7 @@ export default async function TemplateEditorPage({ params }: { params: Promise<{
         {t("title")}
       </Link>
       <h1 className="text-2xl font-semibold break-words">{editor.template.name}</h1>
-      <TemplateEditor templateId={editor.template.id} blocks={editor.blocks} />
+      <TemplateEditor templateId={editor.template.id} blocks={editor.blocks} tracks={tracks} />
     </div>
   );
 }

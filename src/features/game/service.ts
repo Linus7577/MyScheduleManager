@@ -86,6 +86,12 @@ export async function runPendingCloseouts(ctx: ScheduleContext): Promise<number>
   const state = await ensureGameState(ctx);
   if (state.last_closed_date && state.last_closed_date >= yesterday) return 0;
 
+  // Nothing has been scheduled before today, so there's nothing to close and no need to generate anything.
+  if (!state.last_closed_date) {
+    const earliest = await ctx.repo.earliestInstanceDate();
+    if (!earliest || earliest > yesterday) return 0;
+  }
+
   await generateMissingInstances(ctx);
 
   const start = state.last_closed_date ? addDays(state.last_closed_date, 1) : await ctx.repo.earliestInstanceDate();

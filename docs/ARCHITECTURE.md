@@ -2,7 +2,7 @@
 
 The big picture of My Schedule Manager: what the pieces are, how data moves, and how it stays private.
 
-Status: **updated at the end of Phase 2.** Parts marked *planned* describe the design for later phases and don't exist yet.
+Status: **updated at the end of Phase 3.** Parts marked *planned* describe the design for later phases and don't exist yet.
 
 ## 1. System diagram
 
@@ -92,11 +92,29 @@ flowchart LR
 - **Called by:** the Home page, status strip and the signed-in layout.
 - **If it fails:** purely decorative. On phones it uses fewer particles, and it stops when motion is reduced or the tab is hidden.
 
-### Dashboard (planned, Phase 3)
-- **Does:** Home's hero and widgets, with layouts saved separately for phone and desktop.
-- **Owns:** `widget_layouts`.
+### Dashboard (built)
+- **Does:** Home's hero, today's timeline and nine widgets you can open, collapse, hide and drag. The spending, portfolio and Oracle widgets are placeholders until their phases.
+- **Owns:** `widget_layouts`, one saved layout for your phone and one for desktop.
 - **Called by:** the Home page.
-- **If it fails:** one broken widget shows its own error state rather than taking down the page.
+- **If it fails:** the page shows an error state with a retry button. If a save fails, your layout returns to what was saved.
+
+### Goals, projects and tasks (built)
+- **Does:** Goal → Project → Task. A project's progress comes from its finished tasks, or a number you set. A goal averages its projects, leaving out paused ones.
+- **Owns:** `goals`, `projects`, `tasks`, and `progress_snapshots` for the charts.
+- **Called by:** the Goals pages, the dashboard and the calendar, which shows tasks with due dates. Later, the Oracle's tools.
+- **If it fails:** an error appears and nothing is saved. Deleting a goal also deletes its projects and tasks, after a confirmation.
+
+### Learning tracker (built)
+- **Does:** courses, roadmaps and books, each with units and a percent complete. Tag a block with a track to chart your study minutes per week.
+- **Owns:** `learning_tracks`, `learning_units`, and the `track_id` tag on blocks and tasks.
+- **Called by:** the Learning pages, the dashboard and the block editor.
+- **If it fails:** an error appears and nothing is saved. Deleting a track removes the tag from blocks and tasks, but keeps them.
+
+### Habits (built)
+- **Does:** daily or weekly targets, with one tap to check in, a heatmap and streaks. They earn no XP, so they can't count twice with blocks.
+- **Owns:** `habits`, `habit_checkins`.
+- **Called by:** the Habits page and dashboard widget.
+- **If it fails:** an error appears and nothing is saved. Nothing else depends on it.
 
 ### AI Oracle (planned, Phase 4)
 - **Does:** chat that can read your schedule and propose changes through a fixed list of tools.
@@ -201,4 +219,6 @@ Each layer stops something different, so one failure doesn't expose everything. 
 - **Rules and storage are separate.** The schedule rules (`service.ts`, `logic.ts`) talk to storage through one interface (`repo.ts`), with a Supabase version and an in-memory version. This lets the rules be fully tested without a database.
 - **Generation is lazy.** Nothing runs in the background. Blocks are created when you open a schedule page, which suits a free plan with limited scheduled jobs.
 - **The ledger stores what really happened.** If a gain is capped because Power is already 100, the row records the amount that was actually applied. That's what lets the totals be rebuilt exactly by adding up the rows.
+- **Each database call is a network trip, so calls are kept few.** A page load remembers each read for that one request, closeout skips its work when there's nothing to close, and heavy libraries (charts, calendar, dragging) only download when they're on screen. Keep the Vercel functions in the same region as the database, or every call crosses an ocean.
+- **Charts follow fixed rules.** Colours were checked with a colour-blindness validator rather than chosen by eye. A learning track keeps its colour, there's only ever one axis, and every chart has a table view.
 - **Every game change is one transaction.** The server can't make several database calls safely in a row, because a crash midway would leave things half done. So one Postgres function, `apply_game_commit`, does it all. It also checks a version number, so two tabs can't overwrite each other's changes.

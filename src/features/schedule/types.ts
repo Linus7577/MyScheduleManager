@@ -14,6 +14,8 @@ export type BlockFields = {
   category: Category;
   title: string;
   notes: string;
+  /** The learning track this block's study time counts toward. */
+  track_id?: string | null;
 };
 
 export type TemplateBlock = BlockFields & { id: string; template_id: string; weekday: number };
@@ -73,14 +75,17 @@ export type ScheduleErrorCode =
   | "notCancellable"
   | "dayClosed"
   | "correctionExpired"
-  | "correctionNeedsStatus";
+  | "correctionNeedsStatus"
+  | "checkinInFuture";
 
 export type ActionResult = { ok: true } | { ok: false; code: ScheduleErrorCode };
 
 /** One item in the calendar feed. The client turns these into calendar entries. */
 export type FeedItem = {
   id: string;
-  kind: "block" | "event";
+  kind: "block" | "event" | "task";
+  /** Where tapping it goes, for items that open another page. */
+  link: string | null;
   title: string;
   category: Category;
   status: InstanceStatus | null;

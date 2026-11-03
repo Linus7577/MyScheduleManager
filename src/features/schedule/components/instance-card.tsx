@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { cancelInstanceAction, editInstanceAction, logInstanceAction } from "../actions";
 import type { BlockFields as BlockValues, BlockInstance, LogStatus } from "../types";
-import { BlockFields } from "./block-fields";
+import { BlockFields, type TrackOption } from "./block-fields";
 import { FormDialog } from "./form-dialog";
 import { CATEGORY_COLOR, STATUS_META } from "./meta";
 import { useScheduleAction } from "./use-action";
@@ -23,6 +23,7 @@ const blockValues = (instance: BlockInstance): BlockValues => ({
   category: instance.category,
   title: instance.title,
   notes: instance.notes,
+  track_id: instance.track_id ?? null,
 });
 
 function NoteDialog({ instance, onClose }: { instance: BlockInstance; onClose: () => void }) {
@@ -57,7 +58,7 @@ function NoteDialog({ instance, onClose }: { instance: BlockInstance; onClose: (
   );
 }
 
-function EditDialog({ instance, onClose }: { instance: BlockInstance; onClose: () => void }) {
+function EditDialog({ instance, tracks, onClose }: { instance: BlockInstance; tracks: TrackOption[]; onClose: () => void }) {
   const t = useTranslations("loop");
   const { pending, error, run } = useScheduleAction();
   const [values, setValues] = useState(blockValues(instance));
@@ -90,7 +91,7 @@ function EditDialog({ instance, onClose }: { instance: BlockInstance; onClose: (
       }
     >
       <p className="text-xs text-muted-foreground">{t("editHint")}</p>
-      <BlockFields value={values} onChange={setValues} />
+      <BlockFields value={values} onChange={setValues} tracks={tracks} />
       {instance.template_block_id && (
         <label className="flex min-h-11 items-center gap-3 text-sm">
           <input
@@ -106,7 +107,13 @@ function EditDialog({ instance, onClose }: { instance: BlockInstance; onClose: (
   );
 }
 
-export function InstanceCard(props: { instance: BlockInstance; overlapping: boolean; isFuture: boolean; isToday: boolean }) {
+export function InstanceCard(props: {
+  instance: BlockInstance;
+  overlapping: boolean;
+  isFuture: boolean;
+  isToday: boolean;
+  tracks: TrackOption[];
+}) {
   const { instance, overlapping, isFuture } = props;
   const t = useTranslations("loop");
   const categories = useTranslations("categories");
@@ -230,7 +237,7 @@ export function InstanceCard(props: { instance: BlockInstance; overlapping: bool
       </div>
 
       {dialog === "note" && <NoteDialog instance={instance} onClose={() => setDialog(null)} />}
-      {dialog === "edit" && <EditDialog instance={instance} onClose={() => setDialog(null)} />}
+      {dialog === "edit" && <EditDialog instance={instance} tracks={props.tracks} onClose={() => setDialog(null)} />}
     </li>
   );
 }

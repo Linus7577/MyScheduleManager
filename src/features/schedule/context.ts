@@ -6,6 +6,7 @@ import { requireOwner } from "@/lib/auth/owner";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { todayInTimeZone, wallClockInTimeZone } from "@/lib/time/today";
 import { getPreviewRepo } from "./memory-repo";
+import { withRequestCache } from "./request-cache";
 import { createSupabaseRepo } from "./supabase-repo";
 import type { ScheduleContext } from "./generation";
 
@@ -27,7 +28,7 @@ export const getScheduleContext = cache(async (): Promise<ScheduleContext & { ti
 
   const db = await createSupabaseServerClient();
   if (!db) throw new Error("Supabase is not configured");
-  const ctx = { ...base, repo: createSupabaseRepo(db, owner.userId) };
+  const ctx = { ...base, repo: withRequestCache(createSupabaseRepo(db, owner.userId)) };
   await runPendingCloseouts(ctx);
   return ctx;
 });

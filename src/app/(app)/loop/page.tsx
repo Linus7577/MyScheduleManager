@@ -20,7 +20,7 @@ export default async function LoopPage({ searchParams }: { searchParams: Promise
 
   const { date: requested } = await searchParams;
   const date = dateSchema.safeParse(requested).success ? (requested as string) : ctx.today;
-  const [day, templates] = await Promise.all([getDayView(ctx, date), getTemplatesView(ctx)]);
+  const [day, templates, tracks] = await Promise.all([getDayView(ctx, date), getTemplatesView(ctx), ctx.repo.listTracks()]);
   const activeName = templates.templates.find((template) => template.id === templates.activeId)?.name;
 
   return (
@@ -67,6 +67,7 @@ export default async function LoopPage({ searchParams }: { searchParams: Promise
               overlapping={day.overlaps.has(instance.id)}
               isFuture={date > ctx.today}
               isToday={date === ctx.today}
+              tracks={tracks}
             />
           ))}
         </ul>

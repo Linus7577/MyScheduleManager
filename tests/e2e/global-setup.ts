@@ -10,6 +10,9 @@ const ROUTES = [
   "/settings",
   "/battle-log",
   "/doom",
+  "/goals",
+  "/learning",
+  "/habits",
   "/api/calendar?start=2026-01-01&end=2026-01-02",
 ];
 

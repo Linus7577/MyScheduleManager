@@ -38,7 +38,9 @@ export function CategorySelect(props: {
   );
 }
 
-export function BlockFields(props: { value: BlockValues; onChange: (value: BlockValues) => void }) {
+export type TrackOption = { id: string; title: string };
+
+export function BlockFields(props: { value: BlockValues; onChange: (value: BlockValues) => void; tracks: TrackOption[] }) {
   const t = useTranslations("blockForm");
   const { value, onChange } = props;
 
@@ -88,6 +90,24 @@ export function BlockFields(props: { value: BlockValues; onChange: (value: Block
           onChange={(category) => onChange({ ...value, category })}
         />
       </div>
+      {props.tracks.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="block-track">{t("track")}</Label>
+          <select
+            id="block-track"
+            className={FIELD_CLASS}
+            value={value.track_id ?? ""}
+            onChange={(event) => onChange({ ...value, track_id: event.target.value || null })}
+          >
+            <option value="">{t("noTrack")}</option>
+            {props.tracks.map((track) => (
+              <option key={track.id} value={track.id}>
+                {track.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="flex flex-col gap-2">
         <Label htmlFor="block-notes">{t("notes")}</Label>
         <Textarea

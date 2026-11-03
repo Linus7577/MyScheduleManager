@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { WidgetSetting } from "@/features/command/types";
 import type { DailySummary, GameState, LedgerEntry } from "@/features/game/types";
 import type { AppRepo } from "./generation";
 import type { BlockInstance, CalendarEvent, TemplateBlock } from "./types";
@@ -59,6 +60,158 @@ const STATE_COLUMNS =
  */
 export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo {
   return {
+    async listGoals() {
+      return unwrap(await db.from("goals").select("id, title, why, target_date, status, created_at").order("created_at"));
+    },
+    async createGoal(fields) {
+      return unwrap(
+        await db
+          .from("goals")
+          .insert({ ...fields, user_id: userId })
+          .select("id, title, why, target_date, status, created_at")
+          .single()
+      );
+    },
+    async updateGoal(id, fields) {
+      check(await db.from("goals").update(fields).eq("id", id));
+    },
+    async deleteGoal(id) {
+      check(await db.from("goals").delete().eq("id", id));
+    },
+
+    async listProjects() {
+      return unwrap(
+        await db
+          .from("projects")
+          .select("id, goal_id, title, status, progress_mode, manual_percent")
+          .order("created_at")
+      );
+    },
+    async createProject(fields) {
+      check(await db.from("projects").insert({ ...fields, user_id: userId }));
+    },
+    async updateProject(id, fields) {
+      check(await db.from("projects").update(fields).eq("id", id));
+    },
+    async deleteProject(id) {
+      check(await db.from("projects").delete().eq("id", id));
+    },
+
+    async listTasks() {
+      return unwrap(
+        await db
+          .from("tasks")
+          .select("id, project_id, title, due_date, status, estimate_minutes, category, track_id")
+          .order("created_at")
+      );
+    },
+    async listTasksDue(from, to) {
+      return unwrap(
+        await db
+          .from("tasks")
+          .select("id, project_id, title, due_date, status, estimate_minutes, category, track_id")
+          .gte("due_date", from)
+          .lte("due_date", to)
+          .order("due_date")
+      );
+    },
+    async createTask(fields) {
+      check(await db.from("tasks").insert({ ...fields, user_id: userId }));
+    },
+    async updateTask(id, fields) {
+      check(await db.from("tasks").update(fields).eq("id", id));
+    },
+    async deleteTask(id) {
+      check(await db.from("tasks").delete().eq("id", id));
+    },
+
+    async listTracks() {
+      return unwrap(await db.from("learning_tracks").select("id, kind, title, created_at").order("created_at"));
+    },
+    async createTrack(fields) {
+      return unwrap(
+        await db
+          .from("learning_tracks")
+          .insert({ ...fields, user_id: userId })
+          .select("id, kind, title, created_at")
+          .single()
+      );
+    },
+    async updateTrack(id, fields) {
+      check(await db.from("learning_tracks").update(fields).eq("id", id));
+    },
+    async deleteTrack(id) {
+      check(await db.from("learning_tracks").delete().eq("id", id));
+    },
+
+    async listUnits() {
+      return unwrap(await db.from("learning_units").select("id, track_id, title, position, percent").order("position"));
+    },
+    async createUnit(fields) {
+      check(await db.from("learning_units").insert({ ...fields, user_id: userId }));
+    },
+    async updateUnit(id, fields) {
+      check(await db.from("learning_units").update(fields).eq("id", id));
+    },
+    async deleteUnit(id) {
+      check(await db.from("learning_units").delete().eq("id", id));
+    },
+
+    async upsertSnapshots(snapshots) {
+      check(
+        await db
+          .from("progress_snapshots")
+          .upsert(
+            snapshots.map((snapshot) => ({ ...snapshot, user_id: userId })),
+            { onConflict: "user_id,date,entity_type,entity_id" }
+          )
+      );
+    },
+    async listSnapshots(entityType, entityIds) {
+      if (entityIds.length === 0) return [];
+      return unwrap(
+        await db
+          .from("progress_snapshots")
+          .select("date, entity_type, entity_id, percent")
+          .eq("entity_type", entityType)
+          .in("entity_id", entityIds)
+          .order("date")
+      );
+    },
+
+    async listHabits() {
+      return unwrap(await db.from("habits").select("id, title, target_per_week, active, created_at").order("created_at"));
+    },
+    async createHabit(fields) {
+      check(await db.from("habits").insert({ ...fields, user_id: userId }));
+    },
+    async updateHabit(id, fields) {
+      check(await db.from("habits").update(fields).eq("id", id));
+    },
+    async deleteHabit(id) {
+      check(await db.from("habits").delete().eq("id", id));
+    },
+
+    async listCheckins(from, to) {
+      return unwrap(await db.from("habit_checkins").select("habit_id, date").gte("date", from).lte("date", to));
+    },
+    async addCheckin(habitId, date) {
+      check(await db.from("habit_checkins").insert({ user_id: userId, habit_id: habitId, date }));
+    },
+    async removeCheckin(habitId, date) {
+      check(await db.from("habit_checkins").delete().eq("habit_id", habitId).eq("date", date));
+    },
+
+    async getWidgetLayout(device) {
+      const row = unwrapMaybe(await db.from("widget_layouts").select("layout").eq("device", device).maybeSingle());
+      return (row as { layout: WidgetSetting[] } | null)?.layout ?? null;
+    },
+    async saveWidgetLayout(device, layout) {
+      check(
+        await db.from("widget_layouts").upsert({ user_id: userId, device, layout }, { onConflict: "user_id,device" })
+      );
+    },
+
     async getGameState() {
       const row = unwrapMaybe(await db.from("game_state").select(STATE_COLUMNS).eq("user_id", userId).maybeSingle());
       return row ? toGameState(row as unknown as GameState) : null;

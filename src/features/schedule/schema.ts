@@ -20,6 +20,7 @@ const blockFields = {
   category: categorySchema,
   title: titleSchema,
   notes: notesSchema,
+  track_id: idSchema.nullable().optional(),
 };
 
 const differentTimes = (value: { start_time: string; end_time: string }) => value.start_time !== value.end_time;

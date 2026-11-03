@@ -1,8 +1,9 @@
+import type { CommandRepo } from "@/features/command/repo";
 import type { GameRepo } from "@/features/game/repo";
 import { addDays, buildInstanceRows, generationEnd } from "./logic";
 import type { ScheduleRepo } from "./repo";
 
-export type AppRepo = ScheduleRepo & GameRepo;
+export type AppRepo = ScheduleRepo & GameRepo & CommandRepo;
 
 export type ScheduleContext = {
   repo: AppRepo;
@@ -36,5 +37,7 @@ export async function generateInstances(ctx: ScheduleContext, from: string, to: 
  */
 export async function generateMissingInstances(ctx: ScheduleContext): Promise<void> {
   const latest = await ctx.repo.latestTemplateInstanceDate();
-  await generateInstances(ctx, latest ? addDays(latest, 1) : ctx.today, generationEnd(ctx.today));
+  const end = generationEnd(ctx.today);
+  if (latest && latest >= end) return;
+  await generateInstances(ctx, latest ? addDays(latest, 1) : ctx.today, end);
 }

@@ -1,3 +1,15 @@
+import type {
+  DashboardDevice,
+  Goal,
+  Habit,
+  HabitCheckin,
+  LearningTrack,
+  LearningUnit,
+  ProgressSnapshot,
+  Project,
+  Task,
+  WidgetSetting,
+} from "@/features/command/types";
 import type { AuditEntry, ClosedDay, DailySummary, GameState, LedgerEntry } from "@/features/game/types";
 import type { AppRepo } from "./generation";
 import type {
@@ -21,6 +33,15 @@ type Store = {
   closedDays: ClosedDay[];
   summaries: DailySummary[];
   audit: AuditEntry[];
+  goals: Goal[];
+  projects: Project[];
+  tasks: Task[];
+  tracks: LearningTrack[];
+  units: LearningUnit[];
+  snapshots: ProgressSnapshot[];
+  habits: Habit[];
+  checkins: HabitCheckin[];
+  layouts: Partial<Record<DashboardDevice, WidgetSetting[]>>;
 };
 
 const emptyStore = (): Store => ({
@@ -35,6 +56,15 @@ const emptyStore = (): Store => ({
   closedDays: [],
   summaries: [],
   audit: [],
+  goals: [],
+  projects: [],
+  tasks: [],
+  tracks: [],
+  units: [],
+  snapshots: [],
+  habits: [],
+  checkins: [],
+  layouts: {},
 });
 
 const newId = () => crypto.randomUUID();
@@ -42,6 +72,136 @@ const newId = () => crypto.randomUUID();
 /** Stands in for Supabase in tests and login-free preview. Nothing here is ever saved. */
 export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
   return {
+    async listGoals() {
+      return [...store.goals];
+    },
+    async createGoal(fields) {
+      const goal = { ...fields, id: newId(), created_at: new Date().toISOString() };
+      store.goals.push(goal);
+      return goal;
+    },
+    async updateGoal(id, fields) {
+      store.goals = store.goals.map((goal) => (goal.id === id ? { ...goal, ...fields } : goal));
+    },
+    async deleteGoal(id) {
+      const projectIds = store.projects.filter((project) => project.goal_id === id).map((project) => project.id);
+      store.goals = store.goals.filter((goal) => goal.id !== id);
+      store.projects = store.projects.filter((project) => project.goal_id !== id);
+      store.tasks = store.tasks.filter((task) => !projectIds.includes(task.project_id));
+    },
+
+    async listProjects() {
+      return [...store.projects];
+    },
+    async createProject(fields) {
+      store.projects.push({ ...fields, id: newId() });
+    },
+    async updateProject(id, fields) {
+      store.projects = store.projects.map((project) => (project.id === id ? { ...project, ...fields } : project));
+    },
+    async deleteProject(id) {
+      store.projects = store.projects.filter((project) => project.id !== id);
+      store.tasks = store.tasks.filter((task) => task.project_id !== id);
+    },
+
+    async listTasks() {
+      return [...store.tasks];
+    },
+    async listTasksDue(from, to) {
+      return store.tasks.filter((task) => task.due_date && task.due_date >= from && task.due_date <= to);
+    },
+    async createTask(fields) {
+      store.tasks.push({ ...fields, id: newId() });
+    },
+    async updateTask(id, fields) {
+      store.tasks = store.tasks.map((task) => (task.id === id ? { ...task, ...fields } : task));
+    },
+    async deleteTask(id) {
+      store.tasks = store.tasks.filter((task) => task.id !== id);
+    },
+
+    async listTracks() {
+      return [...store.tracks];
+    },
+    async createTrack(fields) {
+      const track = { ...fields, id: newId(), created_at: new Date().toISOString() };
+      store.tracks.push(track);
+      return track;
+    },
+    async updateTrack(id, fields) {
+      store.tracks = store.tracks.map((track) => (track.id === id ? { ...track, ...fields } : track));
+    },
+    async deleteTrack(id) {
+      store.tracks = store.tracks.filter((track) => track.id !== id);
+      store.units = store.units.filter((unit) => unit.track_id !== id);
+      store.tasks = store.tasks.map((task) => (task.track_id === id ? { ...task, track_id: null } : task));
+      store.blocks = store.blocks.map((block) => (block.track_id === id ? { ...block, track_id: null } : block));
+      store.instances = store.instances.map((block) => (block.track_id === id ? { ...block, track_id: null } : block));
+    },
+
+    async listUnits() {
+      return [...store.units];
+    },
+    async createUnit(fields) {
+      store.units.push({ ...fields, id: newId() });
+    },
+    async updateUnit(id, fields) {
+      store.units = store.units.map((unit) => (unit.id === id ? { ...unit, ...fields } : unit));
+    },
+    async deleteUnit(id) {
+      store.units = store.units.filter((unit) => unit.id !== id);
+    },
+
+    async upsertSnapshots(snapshots) {
+      for (const snapshot of snapshots) {
+        store.snapshots = store.snapshots.filter(
+          (existing) =>
+            !(
+              existing.date === snapshot.date &&
+              existing.entity_type === snapshot.entity_type &&
+              existing.entity_id === snapshot.entity_id
+            )
+        );
+        store.snapshots.push(snapshot);
+      }
+    },
+    async listSnapshots(entityType, entityIds) {
+      return store.snapshots.filter(
+        (snapshot) => snapshot.entity_type === entityType && entityIds.includes(snapshot.entity_id)
+      );
+    },
+
+    async listHabits() {
+      return [...store.habits];
+    },
+    async createHabit(fields) {
+      store.habits.push({ ...fields, id: newId(), created_at: new Date().toISOString() });
+    },
+    async updateHabit(id, fields) {
+      store.habits = store.habits.map((habit) => (habit.id === id ? { ...habit, ...fields } : habit));
+    },
+    async deleteHabit(id) {
+      store.habits = store.habits.filter((habit) => habit.id !== id);
+      store.checkins = store.checkins.filter((checkin) => checkin.habit_id !== id);
+    },
+
+    async listCheckins(from, to) {
+      return store.checkins.filter((checkin) => checkin.date >= from && checkin.date <= to);
+    },
+    async addCheckin(habitId, date) {
+      store.checkins.push({ habit_id: habitId, date });
+    },
+    async removeCheckin(habitId, date) {
+      store.checkins = store.checkins.filter((checkin) => !(checkin.habit_id === habitId && checkin.date === date));
+    },
+
+    async getWidgetLayout(device) {
+      return store.layouts[device] ?? null;
+    },
+    async saveWidgetLayout(device, layout) {
+      store.layouts[device] = layout;
+    },
+
     async getGameState() {
       return store.game;
     },
@@ -197,6 +357,7 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
         store.instances.push({
           ...row,
           id: newId(),
+          track_id: row.track_id ?? null,
           log_note: "",
           logged_at: null,
           is_edited: false,

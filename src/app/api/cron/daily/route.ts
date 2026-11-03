@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_TIMEZONE } from "@/config/app.config";
+import { recordProgressSnapshots } from "@/features/command/service";
 import { runPendingCloseouts } from "@/features/game/service";
 import { createSupabaseRepo } from "@/features/schedule/supabase-repo";
 import { isAllowedEmail } from "@/lib/auth/access";
@@ -35,12 +36,14 @@ export async function GET(request: Request) {
     const { data: settings } = await admin.from("settings").select("timezone").eq("user_id", owner.id).maybeSingle();
     const timeZone = settings?.timezone ?? DEFAULT_TIMEZONE;
     const now = new Date();
-    const closed = await runPendingCloseouts({
+    const ctx = {
       repo: createSupabaseRepo(admin, owner.id),
       today: todayInTimeZone(timeZone, now),
       wallClock: wallClockInTimeZone(timeZone, now),
       now,
-    });
+    };
+    const closed = await runPendingCloseouts(ctx);
+    await recordProgressSnapshots(ctx);
     return NextResponse.json({ ok: true, closed });
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 });

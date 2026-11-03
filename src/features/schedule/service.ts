@@ -299,7 +299,12 @@ function eventEnd(event: CalendarEvent): string {
 }
 
 export async function getCalendarFeed(ctx: ScheduleContext, from: string, to: string): Promise<FeedItem[]> {
-  const [instances, events] = await Promise.all([ctx.repo.listInstances(from, to), ctx.repo.listEvents(from, to)]);
+  const [instances, events, tasks, projects] = await Promise.all([
+    ctx.repo.listInstances(from, to),
+    ctx.repo.listEvents(from, to),
+    ctx.repo.listTasksDue(from, to),
+    ctx.repo.listProjects(),
+  ]);
   const statusByEvent = new Map(
     instances.filter((instance) => instance.event_id).map((instance) => [instance.event_id, instance.status])
   );
@@ -311,6 +316,7 @@ export async function getCalendarFeed(ctx: ScheduleContext, from: string, to: st
       return {
         id: `block-${instance.id}`,
         kind: "block",
+        link: `/loop?date=${instance.date}`,
         title: instance.title,
         category: instance.category,
         status: instance.status,
@@ -325,6 +331,7 @@ export async function getCalendarFeed(ctx: ScheduleContext, from: string, to: st
   const eventItems: FeedItem[] = events.map((event) => ({
     id: `event-${event.id}`,
     kind: "event",
+    link: null,
     title: event.title,
     category: event.category,
     status: statusByEvent.get(event.id) ?? null,
@@ -335,7 +342,24 @@ export async function getCalendarFeed(ctx: ScheduleContext, from: string, to: st
     event,
   }));
 
-  return [...blockItems, ...eventItems];
+  const goalByProject = new Map(projects.map((project) => [project.id, project.goal_id]));
+  const taskItems: FeedItem[] = tasks
+    .filter((task) => task.status !== "done" && task.due_date)
+    .map((task) => ({
+      id: `task-${task.id}`,
+      kind: "task",
+      link: `/goals/${goalByProject.get(task.project_id)}`,
+      title: task.title,
+      category: task.category,
+      status: null,
+      all_day: true,
+      start: task.due_date as string,
+      end: addDays(task.due_date as string, 1),
+      date: task.due_date as string,
+      event: null,
+    }));
+
+  return [...blockItems, ...eventItems, ...taskItems];
 }
 
 export async function getTemplatesView(ctx: ScheduleContext) {

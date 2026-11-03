@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { createBlockAction, deleteBlockAction, updateBlockAction } from "../actions";
 import { findTemplateOverlaps } from "../logic";
 import type { BlockFields as BlockValues, TemplateBlock } from "../types";
-import { BlockFields, EMPTY_BLOCK } from "./block-fields";
+import { BlockFields, EMPTY_BLOCK, type TrackOption } from "./block-fields";
 import { FormDialog } from "./form-dialog";
 import { CATEGORY_COLOR, FIELD_CLASS } from "./meta";
 import { useScheduleAction } from "./use-action";
@@ -21,6 +21,7 @@ function BlockDialog(props: {
   templateId: string;
   block: TemplateBlock | null;
   weekday: number;
+  tracks: TrackOption[];
   onClose: () => void;
 }) {
   const t = useTranslations("templates");
@@ -36,6 +37,7 @@ function BlockDialog(props: {
           category: block.category,
           title: block.title,
           notes: block.notes,
+          track_id: block.track_id ?? null,
         }
       : EMPTY_BLOCK
   );
@@ -72,13 +74,13 @@ function BlockDialog(props: {
           ))}
         </select>
       </div>
-      <BlockFields value={values} onChange={setValues} />
+      <BlockFields value={values} onChange={setValues} tracks={props.tracks} />
       <p className="text-xs text-muted-foreground">{t("blockEditHint")}</p>
     </FormDialog>
   );
 }
 
-export function TemplateEditor(props: { templateId: string; blocks: TemplateBlock[] }) {
+export function TemplateEditor(props: { templateId: string; blocks: TemplateBlock[]; tracks: TrackOption[] }) {
   const t = useTranslations("templates");
   const weekdays = useTranslations("weekdays");
   const categories = useTranslations("categories");
@@ -170,6 +172,7 @@ export function TemplateEditor(props: { templateId: string; blocks: TemplateBloc
           templateId={props.templateId}
           block={dialog.block}
           weekday={dialog.weekday}
+          tracks={props.tracks}
           onClose={() => setDialog(null)}
         />
       )}

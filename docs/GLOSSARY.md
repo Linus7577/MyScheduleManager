@@ -20,6 +20,7 @@ Short definitions of terms you'll meet in this project.
 | **cron** | A job that runs on a schedule. Vercel Hobby allows each job to run once per day. |
 | **CSP (Content Security Policy)** | A header telling the browser which scripts and connections to allow. It limits damage from injected code. |
 | **environment variable (env var)** | A setting stored outside the code, such as a key. Kept in `.env.local` and on Vercel. |
+| **heatmap** | A grid of days, where a filled square means something happened that day. Used for habits. |
 | **hysteresis** | Waiting before reacting, to prevent flicker. Your tier only drops after 3 closeouts below its level. |
 | **i18n** | "Internationalization": making the app work in several languages. Text lives in `messages/`. |
 | **idempotent** | Safe to repeat: running it twice has the same result as once. Closeout must be. |
@@ -42,12 +43,15 @@ Short definitions of terms you'll meet in this project.
 | **secret key** | The powerful Supabase key (`sb_secret_...`) that bypasses RLS. Server only, used only by cron. |
 | **server action** | A server function the page can call directly, used for saving data. |
 | **server component** | UI code that runs only on the server. Its logic and secrets never reach the browser. |
+| **snapshot** | A saved copy of a progress number for one day. Charts are drawn from these, since the live number only knows today. |
 | **service worker** | A background script in the browser, used for push and offline. Arrives in Phase 7. |
 | **shadcn/ui** | A set of UI components copied into this project, so we can restyle them freely. |
 | **Shield** | A sick or emergency day, up to 3 per calendar month, which can be declared the same day. Works like a Rest Day. |
 | **Tailwind** | A CSS system where you style with small classes. Our colours are defined in `globals.css`. |
 | **template** | One version of your repeating week, such as Semester or Exam Week. Its blocks are the plan, not the real schedule. |
 | **wall-clock time** | A time as read off a clock, like 09:00, with no timezone attached. Blocks are stored this way. |
+| **track** | A course, roadmap or book you're working through. Blocks and tasks can be tagged with one. |
 | **transaction** | A group of database changes that succeed or fail as one, so nothing is left half done. |
 | **VAPID** | Keys that identify your app to the browser's push service, so only it can send you notifications. |
+| **widget** | One movable card on the Home dashboard, which can be open, collapsed or hidden. |
 | **Zod** | A library that checks data has the expected shape, and rejects it if not. |

@@ -80,6 +80,7 @@ Run `npm run dev` and sign in. You should reach the Home page.
 1. At vercel.com, sign in with GitHub, choose **Add New → Project**, and import your repository.
 2. Before deploying, add the five variables from `.env.local` under **Environment Variables**. Don't add `AUTH_PREVIEW`.
 3. Deploy, and copy the live address, such as `https://your-app.vercel.app`.
+   - **Set the function region to match Supabase:** in Vercel's **Settings → Functions**, pick the region closest to your Supabase project. **Why:** every page makes several database calls, and each one crosses that distance. In the same region they take a few milliseconds.
 4. Back in Supabase's **URL Configuration**, set **Site URL** to that address and add `https://your-app.vercel.app/auth/callback` to **Redirect URLs**. **Why:** so Google sign-in returns to the live app and not to localhost.
 
 Vercel picks up the daily job from `vercel.json` automatically. **Why it matters:** it keeps Supabase from pausing after a quiet week.

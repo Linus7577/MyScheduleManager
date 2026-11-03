@@ -2,10 +2,23 @@ import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Flame, ShieldAlert } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { Dashboard } from "@/features/command/components/dashboard";
+import { TodayTimeline } from "@/features/command/components/today-timeline";
+import {
+  EventsWidget,
+  GoalsWidget,
+  HabitsWidget,
+  LearningWidget,
+  SealedWidget,
+  TodayWidget,
+  WeeklyWidget,
+} from "@/features/command/components/widgets";
+import { getDashboardLayouts } from "@/features/command/service";
 import { Avatar } from "@/features/game/components/avatar";
 import { ParticleCanvas } from "@/features/game/components/particle-canvas";
 import { getGameView } from "@/features/game/service";
 import { getScheduleContext } from "@/features/schedule/context";
+import { ensureLoopReady } from "@/features/schedule/service";
 import { getMotionLevel } from "@/features/settings/queries";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +29,20 @@ export default async function HomePage() {
   const t = await getTranslations("home");
   const tiers = await getTranslations("tiers");
   const powerStates = await getTranslations("powerStates");
+  const dashboard = await getTranslations("dashboard");
+  const templates = await getTranslations("templates");
   const format = await getFormatter();
   const ctx = await getScheduleContext();
-  const [game, motion] = await Promise.all([getGameView(ctx), getMotionLevel()]);
+
+  await ensureLoopReady(ctx, [templates("seedSemester"), templates("seedExam"), templates("seedHoliday")]);
+
+  const [game, motion, layouts, instances] = await Promise.all([
+    getGameView(ctx),
+    getMotionLevel(),
+    getDashboardLayouts(ctx),
+    ctx.repo.listInstances(ctx.today, ctx.today),
+  ]);
+  const blocks = instances.filter((block) => !block.is_cancelled);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
@@ -57,11 +81,38 @@ export default async function HomePage() {
               {format.dateTime(new Date(`${ctx.today}T00:00:00Z`), { dateStyle: "full", timeZone: "UTC" })}
             </time>
           </p>
+          <TodayTimeline blocks={blocks} />
           <Link href="/loop" className={cn(buttonVariants(), "h-11 px-4")}>
             {t("openLoop")}
           </Link>
         </div>
       </section>
+
+      <Dashboard
+        layouts={layouts}
+        titles={{
+          goals: dashboard("widgets.goals"),
+          today: dashboard("widgets.today"),
+          learning: dashboard("widgets.learning"),
+          habits: dashboard("widgets.habits"),
+          spending: dashboard("widgets.spending"),
+          portfolio: dashboard("widgets.portfolio"),
+          oracle: dashboard("widgets.oracle"),
+          events: dashboard("widgets.events"),
+          weekly: dashboard("widgets.weekly"),
+        }}
+        widgets={{
+          goals: <GoalsWidget ctx={ctx} />,
+          today: <TodayWidget ctx={ctx} />,
+          learning: <LearningWidget ctx={ctx} />,
+          habits: <HabitsWidget ctx={ctx} />,
+          spending: <SealedWidget phase={5} />,
+          portfolio: <SealedWidget phase={5} />,
+          oracle: <SealedWidget phase={4} />,
+          events: <EventsWidget ctx={ctx} />,
+          weekly: <WeeklyWidget ctx={ctx} />,
+        }}
+      />
     </div>
   );
 }

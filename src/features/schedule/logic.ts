@@ -91,6 +91,7 @@ export function buildInstanceRows(input: {
         category: block.category,
         title: block.title,
         notes: block.notes,
+        track_id: block.track_id ?? null,
         status: input.restDates.has(date) ? "rest" : "planned",
         template_block_id: block.id,
         event_id: null,

@@ -1,5 +1,33 @@
 # Changelog
 
+## What changed in Phase 3: Command Center
+
+**Built**
+- Dashboard: Home's hero with today's timeline, plus nine widgets you can open, collapse, hide and reorder by dragging or with arrows. Phone and desktop each keep their own layout.
+- Goals, projects and tasks, with progress computed from tasks or set by hand. Tasks with due dates appear on the calendar.
+- Learning tracker: courses, roadmaps and books, with units and percent complete. Blocks and tasks can be tagged with a track.
+- Habits: daily or weekly targets, one-tap check-in, a clickable heatmap and streaks. No XP.
+- Daily progress snapshots, from the daily cron and when you open a goal or track.
+- Charts: progress over time, planned against done minutes this week, and study minutes per track per week. Each has a table view.
+- New tables in `supabase/migrations/20261103030000_command.sql`, all with RLS.
+
+**Speed**
+- A page load now remembers each database read for that request, instead of repeating it.
+- Closeout skips its work when there's nothing to close, and generation skips when everything's already generated.
+- The charts and drag library only download when needed.
+
+**Decisions made**
+- A goal averages its projects and leaves out paused ones, so pausing a project doesn't drag the goal down.
+- A daily habit (7 times a week) counts days in a row. A less frequent one counts weeks that reached the target. An unfinished today or this week doesn't break a streak.
+- Check-ins can be added or removed for today and past days, but not future ones.
+- Partial blocks count as half in the study and weekly charts, the same as in the streak rule.
+- A track's colour stays with it. Past eight tracks, the rest fold into "Other".
+- The spending, portfolio and Oracle widgets show a sealed note until Phases 4 and 5.
+
+**Not done yet**
+- Google sign-in and reading data work on your real database. Saving blocks, and all of Phases 2 and 3's saving, still haven't run there.
+- Not deployed.
+
 ## What changed in Phase 2: The Game
 
 **Built**
@@ -30,7 +58,7 @@
 **Not done yet**
 - Nothing has run against your real database or a real midnight. Closeout is tested with simulated dates, and the database function with a test Postgres.
 - Art and animation are functional placeholders. Polish is Phase 7.
-- Later spec items not built here: page-transition veil, and the Home timeline, which arrives with the Phase 3 dashboard.
+- Later spec items not built here: the page-transition veil.
 - Not deployed. Phase 0's sign-in test and Vercel deploy are still open.
 
 ## What changed in Phase 1: The Loop
