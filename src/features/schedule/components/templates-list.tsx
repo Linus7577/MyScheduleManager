@@ -20,7 +20,7 @@ import { useScheduleAction } from "./use-action";
 type TemplateRow = { id: string; name: string; blockCount: number };
 type DialogState = { type: "switch" | "rename"; template: TemplateRow } | { type: "new" } | null;
 
-function SwitchDialog(props: { template: TemplateRow; today: string; onClose: () => void }) {
+export function SwitchDialog(props: { template: { id: string; name: string }; today: string; onClose: () => void }) {
   const t = useTranslations("templates");
   const { pending, error, run } = useScheduleAction();
   const [effectiveFrom, setEffectiveFrom] = useState(props.today);

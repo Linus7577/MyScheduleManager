@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import type { BlockFields as BlockValues, TemplateBlock } from "../types";
 import { BlockFields, EMPTY_BLOCK, type TrackOption } from "./block-fields";
 import { FormDialog } from "./form-dialog";
 import { CATEGORY_COLOR, FIELD_CLASS } from "./meta";
+import { SwitchDialog } from "./templates-list";
 import { useScheduleAction } from "./use-action";
 
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7];
@@ -58,7 +59,21 @@ function BlockDialog(props: {
           props.onClose
         )
       }
+      extraAction={
+        block ? (
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={pending}
+            className="h-11 px-2"
+            onClick={() => run(() => createBlockAction({ template_id: props.templateId, weekday, ...values }), props.onClose)}
+          >
+            {t("saveAsNew")}
+          </Button>
+        ) : undefined
+      }
     >
+      {block && <p className="text-xs text-muted-foreground">{t("editReplacesHint")}</p>}
       <div className="flex flex-col gap-2">
         <Label htmlFor="block-weekday">{t("weekday")}</Label>
         <select
@@ -80,12 +95,23 @@ function BlockDialog(props: {
   );
 }
 
-export function TemplateEditor(props: { templateId: string; blocks: TemplateBlock[]; tracks: TrackOption[] }) {
+export function TemplateEditor(props: {
+  templateId: string;
+  templateName: string;
+  blocks: TemplateBlock[];
+  tracks: TrackOption[];
+  isActive: boolean;
+  scheduledFrom: string | null;
+  activeName: string | null;
+  today: string;
+}) {
   const t = useTranslations("templates");
   const weekdays = useTranslations("weekdays");
   const categories = useTranslations("categories");
+  const format = useFormatter();
   const { pending, error, run } = useScheduleAction();
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [switching, setSwitching] = useState(false);
   const overlaps = findTemplateOverlaps(props.blocks);
 
   function remove(block: TemplateBlock) {
@@ -95,6 +121,26 @@ export function TemplateEditor(props: { templateId: string; blocks: TemplateBloc
 
   return (
     <div className="flex flex-col gap-4">
+      {!props.isActive && (
+        <section
+          aria-label={t("notActiveLabel")}
+          className="flex flex-col gap-3 rounded-xl bg-ember-950 p-4 text-sm text-ember-100 ring-1 ring-ember-800"
+        >
+          <p className="flex items-start gap-2">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>
+              {props.scheduledFrom
+                ? t("scheduledWarning", {
+                    date: format.dateTime(new Date(`${props.scheduledFrom}T00:00:00Z`), { dateStyle: "medium", timeZone: "UTC" }),
+                  })
+                : t("notActiveWarning", { active: props.activeName ?? "" })}
+            </span>
+          </p>
+          <Button type="button" variant="outline" className="h-11 w-fit px-4" onClick={() => setSwitching(true)}>
+            {t("makeActive")}
+          </Button>
+        </section>
+      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -167,6 +213,13 @@ export function TemplateEditor(props: { templateId: string; blocks: TemplateBloc
         );
       })}
 
+      {switching && (
+        <SwitchDialog
+          template={{ id: props.templateId, name: props.templateName }}
+          today={props.today}
+          onClose={() => setSwitching(false)}
+        />
+      )}
       {dialog && (
         <BlockDialog
           templateId={props.templateId}

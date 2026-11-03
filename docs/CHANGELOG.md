@@ -1,5 +1,10 @@
 # Changelog
 
+## Fixes after first real use
+
+- **Blocks in an inactive template:** the template editor now warns when a template isn't active, with a Make active button. The Loop also says when your blocks are in a different template from the active one. Before, blocks added there silently never appeared, so they could never earn XP.
+- **Editing mistaken for adding:** the edit dialog now says saving replaces the block, and offers Save as a new block to keep the original.
+
 ## What changed in Phase 4: The Oracle
 
 **Built**
