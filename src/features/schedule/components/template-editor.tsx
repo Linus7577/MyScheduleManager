@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -121,6 +122,14 @@ export function TemplateEditor(props: {
 
   return (
     <div className="flex flex-col gap-4">
+      {props.isActive && (
+        <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+          {t("activeHint")}
+          <Link href="/loop" className="flex min-h-10 items-center text-crimson-400 underline-offset-4 hover:underline">
+            {t("goToLoop")}
+          </Link>
+        </p>
+      )}
       {!props.isActive && (
         <section
           aria-label={t("notActiveLabel")}

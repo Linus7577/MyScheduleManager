@@ -60,10 +60,14 @@ test("an inactive template warns you, and switching makes its blocks earn XP", a
   ).toHaveAttribute("aria-valuetext", "60");
 });
 
-test("the active template shows no warning", async ({ page, request }) => {
+test("the active template shows no warning, and explains how XP is earned", async ({ page, request }) => {
   await seed(request);
   await openTemplate(page, "Semester");
   await expect(page.getByRole("region", { name: "This template isn't active" })).toHaveCount(0);
+  await expect(page.getByText("You earn XP by tapping Done")).toBeVisible();
+
+  await page.getByRole("link", { name: "Go to the Loop" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "The Loop" })).toBeVisible();
 });
 
 test("adding again stacks blocks, and nothing is lost", async ({ page, request }) => {

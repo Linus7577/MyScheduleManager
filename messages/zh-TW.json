@@ -424,6 +424,8 @@
     "blockEditHint": "今天起的時段都會變更，但你記錄或編輯過的除外。",
     "editReplacesHint": "儲存會變更此時段。若要保留它並再新增一個，請使用「另存為新時段」。",
     "saveAsNew": "另存為新時段",
+    "activeHint": "這裡的時段是一週的計畫。在循環中按下「完成」才會獲得經驗。",
+    "goToLoop": "前往循環",
     "notActiveLabel": "此範本未使用中",
     "notActiveWarning": "此範本未使用中，使用中的是 {active}。切換之前，這裡的時段不會進入循環，也不會獲得經驗。",
     "scheduledWarning": "此範本將於 {date} 接手。在那之前，它的時段不會進入循環，也不會獲得經驗。",

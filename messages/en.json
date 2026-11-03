@@ -424,6 +424,8 @@
     "blockEditHint": "Blocks from today on change, except any you've logged or edited.",
     "editReplacesHint": "Saving changes this block. To keep it and add another, use Save as a new block.",
     "saveAsNew": "Save as a new block",
+    "activeHint": "Blocks here plan your week. You earn XP by tapping Done on them in the Loop.",
+    "goToLoop": "Go to the Loop",
     "notActiveLabel": "This template isn't active",
     "notActiveWarning": "This template isn't active. {active} is, so blocks here won't reach your Loop or earn XP until you switch.",
     "scheduledWarning": "This template takes over on {date}. Until then, its blocks won't reach your Loop or earn XP.",
