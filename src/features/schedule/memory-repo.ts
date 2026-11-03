@@ -10,6 +10,7 @@ import type {
   Task,
   WidgetSetting,
 } from "@/features/command/types";
+import { createFinanceMemoryRepo, emptyFinanceStore, type FinanceStore } from "@/features/finance/memory-repo";
 import type { AuditEntry, ClosedDay, DailySummary, GameState, LedgerEntry } from "@/features/game/types";
 import type { LoggedAudit, OracleAction, OracleMessage, Proposal, Suggestion } from "@/features/oracle/types";
 import type { AppRepo } from "./generation";
@@ -52,6 +53,7 @@ type Store = {
   reviews: Record<string, string>;
   loggedAudit: LoggedAudit[];
   aboutMe: string;
+  finance: FinanceStore;
 };
 
 const emptyStore = (): Store => ({
@@ -84,6 +86,7 @@ const emptyStore = (): Store => ({
   reviews: {},
   loggedAudit: [],
   aboutMe: "",
+  finance: emptyFinanceStore(),
 });
 
 const newId = () => crypto.randomUUID();
@@ -96,6 +99,8 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
   };
 
   return {
+    ...createFinanceMemoryRepo(store.finance),
+
     async getLatestConversationId() {
       return store.conversations.at(-1) ?? null;
     },

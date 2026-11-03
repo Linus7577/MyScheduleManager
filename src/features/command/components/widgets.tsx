@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { CalendarDays, Flame, ListTodo, Lock } from "lucide-react";
+import { CalendarDays, Flame, ListTodo } from "lucide-react";
 import { getGameView } from "@/features/game/service";
 import { STATUS_META } from "@/features/schedule/components/meta";
 import type { ScheduleContext } from "@/features/schedule/generation";
@@ -12,7 +12,7 @@ import { WeeklyChart } from "./chart-loaders";
 import { HabitToggle } from "./habits";
 import { ProgressBar } from "./progress-bar";
 
-function WidgetLink({ href, children }: { href: string; children: React.ReactNode }) {
+export function WidgetLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link href={href} className="mt-2 flex min-h-10 w-fit items-center text-sm text-crimson-400 underline-offset-4 hover:underline">
       {children}
@@ -171,14 +171,4 @@ export async function EventsWidget({ ctx }: { ctx: ScheduleContext }) {
 
 export async function WeeklyWidget({ ctx }: { ctx: ScheduleContext }) {
   return <WeeklyChart data={await getWeeklyStats(ctx)} />;
-}
-
-export async function SealedWidget({ phase }: { phase: number }) {
-  const t = await getTranslations("sealed");
-  return (
-    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-      <Lock className="size-3.5" aria-hidden="true" />
-      {t("note", { phase })}
-    </p>
-  );
 }

@@ -418,6 +418,109 @@ describe("Oracle tables", () => {
   });
 });
 
+describe("finance tables", () => {
+  const TABLES = [
+    "fin_categories",
+    "recurring_rules",
+    "transactions",
+    "budgets",
+    "trades",
+    "price_cache",
+    "fx_rates",
+    "portfolio_snapshots",
+  ];
+  const CATEGORY = "40000000-0000-0000-0000-000000000001";
+  const RULE = "40000000-0000-0000-0000-000000000002";
+
+  const insertRepeat = () =>
+    db.query(
+      `insert into public.transactions (user_id, kind, amount, currency, fx_rate, amount_twd, date, category_id, recurring_rule_id, recurring_date)
+       values ($1, 'expense', 100, 'TWD', 1, 100, '2026-11-01', $2, $3, '2026-11-01')`,
+      [OWNER, CATEGORY, RULE]
+    );
+
+  beforeAll(async () => {
+    await db.query(`insert into public.fin_categories (id, user_id, kind, key) values ($1, $2, 'expense', 'food')`, [CATEGORY, OWNER]);
+    await db.query(
+      `insert into public.recurring_rules (id, user_id, kind, amount, currency, category_id, frequency, start_date, next_date)
+       values ($1, $2, 'expense', 100, 'TWD', $3, 'monthly', '2026-11-01', '2026-12-01')`,
+      [RULE, OWNER, CATEGORY]
+    );
+    await insertRepeat();
+    await db.query(`insert into public.budgets (user_id, category_id, amount_twd) values ($1, $2, 1000)`, [OWNER, CATEGORY]);
+    await db.query(
+      `insert into public.trades (user_id, side, market, symbol, quantity, price, currency, fx_rate, date)
+       values ($1, 'buy', 'US', 'AAPL', 1, 100, 'USD', 32, '2026-11-01')`,
+      [OWNER]
+    );
+    await db.query(`insert into public.price_cache (user_id, market, symbol, currency, price) values ($1, 'US', 'AAPL', 'USD', 150)`, [OWNER]);
+    await db.query(`insert into public.fx_rates (user_id, currency, rate_date, rate, source) values ($1, 'USD', '2026-11-01', 32, 'api')`, [OWNER]);
+    await db.query(`insert into public.portfolio_snapshots (user_id, date, value_twd, cost_twd) values ($1, '2026-11-01', 4800, 3200)`, [OWNER]);
+  });
+
+  it.each(TABLES)("%s is invisible to the anon key", async (table) => {
+    await asUser(null, "anon", async () => {
+      await expect(db.query(`select * from public.${table}`)).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it.each(TABLES)("%s hides the owner's rows from another user", async (table) => {
+    await asUser(STRANGER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows).toEqual([]);
+      expect((await db.query(`delete from public.${table}`)).affectedRows).toBe(0);
+    });
+  });
+
+  it.each(TABLES)("%s is readable by its owner", async (table) => {
+    await asUser(OWNER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("can't create the same repeat twice", async () => {
+    await expect(insertRepeat()).rejects.toThrow(/duplicate key/);
+  });
+
+  it("can't create the same default category twice", async () => {
+    await expect(
+      db.query(`insert into public.fin_categories (user_id, kind, key) values ($1, 'expense', 'food')`, [OWNER])
+    ).rejects.toThrow(/duplicate key/);
+  });
+
+  it("won't delete a category that records use, which is why categories are archived", async () => {
+    await expect(db.query(`delete from public.fin_categories where id = $1`, [CATEGORY])).rejects.toThrow(/foreign key/);
+  });
+
+  it("refuses impossible money", async () => {
+    const insert = (columns: string) =>
+      db.query(
+        `insert into public.transactions (user_id, kind, amount, currency, fx_rate, amount_twd, date, category_id)
+         values ($1, ${columns}, '2026-11-02', $2)`,
+        [OWNER, CATEGORY]
+      );
+    await expect(insert(`'expense', 0, 'TWD', 1, 0`)).rejects.toThrow(/check constraint/);
+    await expect(insert(`'expense', 1, 'EUR', 1, 1`)).rejects.toThrow(/check constraint/);
+    await expect(insert(`'expense', 1, 'USD', 0, 1`)).rejects.toThrow(/check constraint/);
+    await expect(insert(`'expense', 1, 'TWD', 2, 2`)).rejects.toThrow(/check constraint/);
+    await expect(insert(`'gift', 1, 'TWD', 1, 1`)).rejects.toThrow(/check constraint/);
+    await expect(
+      db.query(
+        `insert into public.trades (user_id, side, market, symbol, quantity, price, currency, fx_rate, date)
+         values ($1, 'buy', 'US', 'AAPL', 0, 1, 'USD', 1, '2026-11-01')`,
+        [OWNER]
+      )
+    ).rejects.toThrow(/check constraint/);
+  });
+
+  it("keeps a rule's records when the rule is deleted", async () => {
+    await db.query(`delete from public.recurring_rules where id = $1`, [RULE]);
+    const { rows } = await db.query<{ recurring_rule_id: string | null }>(
+      `select recurring_rule_id from public.transactions where date = '2026-11-01'`
+    );
+    expect(rows).toEqual([{ recurring_rule_id: null }]);
+  });
+});
+
 describe("game tables and the atomic commit", () => {
   const GAME_TABLES = ["game_state", "game_ledger", "closed_days", "daily_summaries"];
 

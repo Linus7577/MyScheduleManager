@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_TIMEZONE } from "@/config/app.config";
 import { recordProgressSnapshots } from "@/features/command/service";
+import { getMarketData } from "@/features/finance/market-data-config";
+import { ensureFinanceReady, refreshMarketData } from "@/features/finance/service";
 import { runPendingCloseouts } from "@/features/game/service";
 import { createSupabaseRepo } from "@/features/schedule/supabase-repo";
 import { isAllowedEmail } from "@/lib/auth/access";
@@ -44,7 +46,15 @@ export async function GET(request: Request) {
     };
     const closed = await runPendingCloseouts(ctx);
     await recordProgressSnapshots(ctx);
-    return NextResponse.json({ ok: true, closed });
+    // Rates first: a repeating foreign-currency transaction needs one. Money trouble must not fail the closeout above.
+    let finance = true;
+    try {
+      await refreshMarketData(ctx, getMarketData());
+      await ensureFinanceReady(ctx);
+    } catch {
+      finance = false;
+    }
+    return NextResponse.json({ ok: true, closed, finance });
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 });
   }

@@ -85,7 +85,10 @@ export type ScheduleErrorCode =
   | "proposalDecided"
   | "proposalOutdated"
   | "undoExpired"
-  | "alreadyUndone";
+  | "alreadyUndone"
+  | "fxMissing"
+  | "oversold"
+  | "marketUnavailable";
 
 export type ActionResult = { ok: true } | { ok: false; code: ScheduleErrorCode };
 

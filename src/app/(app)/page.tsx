@@ -9,11 +9,13 @@ import {
   GoalsWidget,
   HabitsWidget,
   LearningWidget,
-  SealedWidget,
   TodayWidget,
   WeeklyWidget,
 } from "@/features/command/components/widgets";
 import { getDashboardLayouts } from "@/features/command/service";
+import { BudgetBanner } from "@/features/finance/components/budget-alerts";
+import { PortfolioWidget, SpendingWidget } from "@/features/finance/components/widgets";
+import { ensureFinanceReady, getSpendingSummary } from "@/features/finance/service";
 import { Avatar } from "@/features/game/components/avatar";
 import { ParticleCanvas } from "@/features/game/components/particle-canvas";
 import { SuggestionWidget } from "@/features/oracle/components/suggestion-widget";
@@ -36,13 +38,15 @@ export default async function HomePage() {
   const ctx = await getScheduleContext();
 
   await ensureLoopReady(ctx, [templates("seedSemester"), templates("seedExam"), templates("seedHoliday")]);
+  await ensureFinanceReady(ctx);
 
-  const [game, motion, layouts, instances, suggestion] = await Promise.all([
+  const [game, motion, layouts, instances, suggestion, spending] = await Promise.all([
     getGameView(ctx),
     getMotionLevel(),
     getDashboardLayouts(ctx),
     ctx.repo.listInstances(ctx.today, ctx.today),
     ctx.repo.getSuggestion(ctx.today),
+    getSpendingSummary(ctx),
   ]);
   const blocks = instances.filter((block) => !block.is_cancelled);
 
@@ -90,6 +94,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <BudgetBanner alerts={spending.alerts} categories={spending.categories} />
+
       <Dashboard
         layouts={layouts}
         titles={{
@@ -108,8 +114,8 @@ export default async function HomePage() {
           today: <TodayWidget ctx={ctx} />,
           learning: <LearningWidget ctx={ctx} />,
           habits: <HabitsWidget ctx={ctx} />,
-          spending: <SealedWidget phase={5} />,
-          portfolio: <SealedWidget phase={5} />,
+          spending: <SpendingWidget ctx={ctx} />,
+          portfolio: <PortfolioWidget ctx={ctx} />,
           oracle: <SuggestionWidget suggestion={suggestion} />,
           events: <EventsWidget ctx={ctx} />,
           weekly: <WeeklyWidget ctx={ctx} />,

@@ -1,10 +1,11 @@
 import type { CommandRepo } from "@/features/command/repo";
+import type { FinanceRepo } from "@/features/finance/repo";
 import type { GameRepo } from "@/features/game/repo";
 import type { OracleRepo } from "@/features/oracle/repo";
 import { addDays, buildInstanceRows, generationEnd } from "./logic";
 import type { ScheduleRepo } from "./repo";
 
-export type AppRepo = ScheduleRepo & GameRepo & CommandRepo & OracleRepo;
+export type AppRepo = ScheduleRepo & GameRepo & CommandRepo & OracleRepo & FinanceRepo;
 
 export type ScheduleContext = {
   repo: AppRepo;

@@ -12,21 +12,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { OTHER_COLOR, SERIES_COLORS } from "./chart-palette";
 
-/**
- * Colours validated against the card surface (#121216): colour-blind separation, normal-vision separation and
- * 3:1 contrast all pass. The order is fixed, and a track keeps its colour for as long as it exists.
- */
-export const SERIES_COLORS = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"];
-const OTHER_COLOR = "#8a8580";
+export const GRID = "rgb(232 228 220 / 12%)";
+export const AXIS_TEXT = { fill: "#9d9894", fontSize: 12 };
+export const SURFACE = "#121216";
+export const BAR_MAX_WIDTH = 24;
+export const BAR_RADIUS: [number, number, number, number] = [4, 4, 0, 0];
 
-const GRID = "rgb(232 228 220 / 12%)";
-const AXIS_TEXT = { fill: "#9d9894", fontSize: 12 };
-const SURFACE = "#121216";
-const BAR_MAX_WIDTH = 24;
-const BAR_RADIUS: [number, number, number, number] = [4, 4, 0, 0];
-
-const TOOLTIP_STYLE = {
+export const TOOLTIP_STYLE = {
   backgroundColor: "#1a1a20",
   border: "1px solid rgb(232 228 220 / 18%)",
   borderRadius: 8,
@@ -34,7 +28,7 @@ const TOOLTIP_STYLE = {
   fontSize: 12,
 };
 
-function Legend({ items }: { items: { label: string; color: string }[] }) {
+export function Legend({ items }: { items: { label: string; color: string }[] }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
       {items.map((item) => (
@@ -47,7 +41,7 @@ function Legend({ items }: { items: { label: string; color: string }[] }) {
   );
 }
 
-function TableView({ headers, rows }: { headers: string[]; rows: (string | number)[][] }) {
+export function TableView({ headers, rows }: { headers: string[]; rows: (string | number)[][] }) {
   const t = useTranslations("charts");
   return (
     <details className="text-xs text-muted-foreground">

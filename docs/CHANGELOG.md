@@ -1,5 +1,14 @@
 # Changelog
 
+## What changed in Phase 5: The Treasury
+
+- **Transactions:** expenses and income in TWD, USD or IDR. Each record keeps the original amount, the rate used and the TWD value. Quick add is number pad first: tap Add, type the amount, tap a category.
+- **Views:** day, month and year, with totals, net savings, category breakdowns and trend charts.
+- **Recurring, budgets, categories:** repeats are created automatically, once each. Budgets warn at 80% and 100%, on the Treasury and on Home. Categories can be renamed, added and archived.
+- **Portfolio:** trades, holdings, average cost, realized and unrealized P/L, allocation, dividends and a value history.
+- **Price sources:** US from Finnhub, which needs a free key. Taiwan from the official exchanges (TWSE and TPEx), as daily closing prices, not live. Exchange rates from ExchangeRate-API's free daily feed. Any price or rate can be set by hand.
+- **New database file:** `20261103050000_finance.sql`.
+
 ## Fixes after first real use
 
 - **Blocks in an inactive template:** the template editor now warns when a template isn't active, with a Make active button. The Loop also says when your blocks are in a different template from the active one. Before, blocks added there silently never appeared, so they could never earn XP.
