@@ -127,6 +127,120 @@ describe("RLS baseline", () => {
   });
 });
 
+describe("schedule tables", () => {
+  const TEMPLATE = "10000000-0000-0000-0000-000000000001";
+  const BLOCK = "10000000-0000-0000-0000-000000000002";
+  const SCHEDULE_TABLES = [
+    "loop_templates",
+    "template_activations",
+    "template_blocks",
+    "block_instances",
+    "events",
+    "rest_days",
+  ];
+
+  beforeAll(async () => {
+    await db.query(`insert into public.loop_templates (id, user_id, name) values ($1, $2, 'Semester')`, [TEMPLATE, OWNER]);
+    await db.query(
+      `insert into public.template_activations (user_id, template_id, effective_from) values ($1, $2, '2026-11-03')`,
+      [OWNER, TEMPLATE]
+    );
+    await db.query(
+      `insert into public.template_blocks (id, user_id, template_id, weekday, start_time, end_time, category, title)
+       values ($1, $2, $3, 3, '09:00', '10:00', 'study', 'Study')`,
+      [BLOCK, OWNER, TEMPLATE]
+    );
+    await db.query(
+      `insert into public.block_instances (user_id, date, start_time, end_time, category, title, template_block_id)
+       values ($1, '2026-11-04', '09:00', '10:00', 'study', 'Study', $2)`,
+      [OWNER, BLOCK]
+    );
+    await db.query(
+      `insert into public.events (user_id, title, category, start_date, end_date, start_time, end_time)
+       values ($1, 'Dentist', 'other', '2026-11-04', '2026-11-04', '14:00', '15:00')`,
+      [OWNER]
+    );
+    await db.query(`insert into public.rest_days (user_id, date, kind) values ($1, '2026-11-05', 'rest')`, [OWNER]);
+  });
+
+  it.each(SCHEDULE_TABLES)("%s is invisible to the anon key", async (table) => {
+    await asUser(null, "anon", async () => {
+      await expect(db.query(`select * from public.${table}`)).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it.each(SCHEDULE_TABLES)("%s hides the owner's rows from another user", async (table) => {
+    await asUser(STRANGER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows).toEqual([]);
+      expect((await db.query(`delete from public.${table}`)).affectedRows).toBe(0);
+    });
+  });
+
+  it.each(SCHEDULE_TABLES)("%s is readable by its owner", async (table) => {
+    await asUser(OWNER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("stops a user writing a row as someone else", async () => {
+    await asUser(STRANGER, "authenticated", async () => {
+      await expect(
+        db.query(`insert into public.rest_days (user_id, date, kind) values ($1, '2026-11-06', 'rest')`, [OWNER])
+      ).rejects.toThrow(/row-level security/);
+    });
+  });
+
+  it("generating the same template block and date twice can't create a duplicate", async () => {
+    await expect(
+      db.query(
+        `insert into public.block_instances (user_id, date, start_time, end_time, category, title, template_block_id)
+         values ($1, '2026-11-04', '09:00', '10:00', 'study', 'Study', $2)`,
+        [OWNER, BLOCK]
+      )
+    ).rejects.toThrow(/duplicate key/);
+  });
+
+  it("removing a template block keeps blocks already on the schedule", async () => {
+    const block = "10000000-0000-0000-0000-000000000003";
+    await db.query(
+      `insert into public.template_blocks (id, user_id, template_id, weekday, start_time, end_time, category, title)
+       values ($1, $2, $3, 4, '09:00', '10:00', 'gym', 'Gym')`,
+      [block, OWNER, TEMPLATE]
+    );
+    await db.query(
+      `insert into public.block_instances (user_id, date, start_time, end_time, category, title, template_block_id, status)
+       values ($1, '2026-11-05', '09:00', '10:00', 'gym', 'Gym', $2, 'done')`,
+      [OWNER, block]
+    );
+    await db.query(`delete from public.template_blocks where id = $1`, [block]);
+
+    const { rows } = await db.query<{ status: string; template_block_id: string | null }>(
+      `select status, template_block_id from public.block_instances where date = '2026-11-05'`
+    );
+    expect(rows).toEqual([{ status: "done", template_block_id: null }]);
+  });
+
+  it("rejects an unknown category, status, weekday or rest kind", async () => {
+    await expect(
+      db.query(`insert into public.rest_days (user_id, date, kind) values ($1, '2026-12-01', 'nap')`, [OWNER])
+    ).rejects.toThrow(/check constraint/);
+    await expect(
+      db.query(
+        `insert into public.template_blocks (user_id, template_id, weekday, start_time, end_time, category, title)
+         values ($1, $2, 8, '09:00', '10:00', 'study', 'Bad')`,
+        [OWNER, TEMPLATE]
+      )
+    ).rejects.toThrow(/check constraint/);
+    await expect(
+      db.query(
+        `insert into public.block_instances (user_id, date, start_time, end_time, category, title, status)
+         values ($1, '2026-12-01', '09:00', '10:00', 'magic', 'Bad', 'planned')`,
+        [OWNER]
+      )
+    ).rejects.toThrow(/check constraint/);
+  });
+});
+
 describe("before-user-created hook", () => {
   const callHook = async (email: string | null) => {
     const event = JSON.stringify({ user: { email } });

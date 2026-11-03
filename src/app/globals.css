@@ -171,6 +171,32 @@
   }
 }
 
+/* The calendar library's theme colours, set to the palette for this page only. */
+.calendar-shell {
+  --fc-classic-button: var(--color-surface-2);
+  --fc-classic-button-border: rgb(232 228 220 / 18%);
+  --fc-classic-button-strong: var(--color-crimson-700);
+  --fc-classic-button-strong-border: var(--color-crimson-500);
+  --fc-classic-button-outline: rgb(220 20 60 / 50%);
+  --fc-classic-button-foreground: var(--color-bone);
+  --fc-classic-primary: var(--color-crimson-500);
+  --fc-classic-primary-foreground: #ffffff;
+  --fc-classic-event: var(--color-surface-2);
+  --fc-classic-event-contrast: var(--color-bone);
+  --fc-classic-highlight: rgb(220 20 60 / 20%);
+  --fc-classic-today: rgb(220 20 60 / 10%);
+  --fc-classic-now: var(--color-ember);
+  --fc-classic-background: var(--color-surface-1);
+  --fc-classic-faint: rgb(232 228 220 / 4%);
+  --fc-classic-muted: rgb(232 228 220 / 8%);
+  --fc-classic-strong: rgb(232 228 220 / 14%);
+  --fc-classic-foreground: var(--color-bone);
+  --fc-classic-faint-foreground: var(--color-ash-400);
+  --fc-classic-muted-foreground: var(--color-ash-300);
+  --fc-classic-border: rgb(232 228 220 / 12%);
+  --fc-classic-strong-border: rgb(232 228 220 / 24%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

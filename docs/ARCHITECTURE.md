@@ -2,7 +2,7 @@
 
 The big picture of My Schedule Manager: what the pieces are, how data moves, and how it stays private.
 
-Status: **v1, written at the end of Phase 0.** Parts marked *planned* describe the design for later phases and don't exist yet.
+Status: **updated at the end of Phase 1.** Parts marked *planned* describe the design for later phases and don't exist yet.
 
 ## 1. System diagram
 
@@ -62,17 +62,17 @@ flowchart LR
 - **Called by:** Vercel Cron at 16:00 UTC (00:00–00:59 Taipei).
 - **If it fails:** nothing is lost. Supabase warns by email before pausing, and a paused project can be restored.
 
-### Schedule Loop (planned, Phase 1)
-- **Does:** weekly templates, the actual blocks on real dates, and check-offs.
-- **Owns:** `loop_templates`, `template_blocks`, `block_instances`, `rest_days`.
-- **Called by:** the Loop and Home pages, and the Oracle through proposals.
-- **If it fails:** you can't log a block until it recovers. Existing logs are safe.
+### Schedule Loop (built)
+- **Does:** weekly templates, the actual blocks on real dates, check-offs, Rest Days and Shields.
+- **Owns:** `loop_templates`, `template_activations`, `template_blocks`, `block_instances`, `rest_days`.
+- **Called by:** the Loop pages. Later, the game engine and the Oracle through proposals.
+- **If it fails:** you see an error and nothing is saved. Existing logs are safe, and generation can safely run again.
 
-### Calendar (planned, Phase 1)
-- **Does:** month, week and day views of blocks, events and deadlines.
+### Calendar (built)
+- **Does:** month, week, day and agenda views of blocks and one-off events. Deadlines arrive with tasks in Phase 3.
 - **Owns:** `events`.
-- **Called by:** the Calendar page.
-- **If it fails:** only the calendar view is affected. Heavy code loads only on this page.
+- **Called by:** the Calendar page, which asks `/api/calendar` for the dates on screen.
+- **If it fails:** only the calendar shows an error. Its heavy code downloads only on this page.
 
 ### Game Engine (planned, Phase 2)
 - **Does:** pure maths for XP, Power, levels and tiers.
@@ -124,16 +124,24 @@ flowchart LR
 
 ## 3. Three traced flows
 
-The first flow's outer steps (1 and 2) are real today. The rest describes the plan and will be corrected as those phases are built.
+In the first flow, steps 1–5 and 8 are real today. Everything marked *planned* will be corrected as those phases are built.
 
-### "I mark my Study block as done" (planned, Phase 1–2)
+### "I mark my Study block as done"
 1. You tap **Done** on the phone.
 2. The request reaches the **proxy**, which checks your session and the allowlist.
 3. A **server action** checks your input with Zod and confirms you're the owner.
-4. It updates the block in `block_instances`. The database's RLS rules confirm the row is yours.
-5. The **game engine** works out the XP and Power from the formulas.
-6. A new row goes into `game_ledger`, and `game_state` is updated.
-7. The page refreshes and the status strip shows your new XP and Power.
+4. The schedule rules check that the block exists, its day has arrived, and it isn't a rest block.
+5. It updates the block in `block_instances`. The database's RLS rules confirm the row is yours.
+6. *Planned, Phase 2:* the **game engine** works out the XP and Power from the formulas.
+7. *Planned, Phase 2:* a new row goes into `game_ledger`, and `game_state` is updated.
+8. The page refreshes and shows the new status. From Phase 2, the status strip shows your new XP and Power too.
+
+### How blocks get onto your schedule
+1. You open the Loop or Calendar. The server finds the last day already generated.
+2. For each new day up to the end of next week, it finds which template was active on that date, using `template_activations`.
+3. It copies that weekday's blocks into `block_instances`. The database refuses duplicates, so this is safe to repeat.
+4. Days already generated are never redone. That's why a block you add today can't appear on a past day, and why a block you edited stays edited.
+5. When you edit a template or switch to another, future blocks you haven't logged or edited are replaced. Anything you touched stays.
 
 ### "Midnight closeout runs" (planned, Phase 2)
 1. Either your first request of the day notices that yesterday isn't closed, or Vercel Cron calls the endpoint with its secret header.
@@ -174,10 +182,13 @@ Each layer stops something different, so one failure doesn't expose everything. 
 13. **Backup (planned, Phase 7).** JSON and CSV export with JSON restore, so a mistake or lost account doesn't mean lost data.
 
 ### Preview mode
-`AUTH_PREVIEW=true` shows the shell without a login so it can be tested before accounts exist. It only works outside production builds, and a test proves a production build ignores it.
+`AUTH_PREVIEW=true` shows the app without a login, so it can be tested before accounts exist. Your data isn't involved: schedule screens use a temporary in-memory store that disappears when the server stops. It only works outside production builds, and a test proves a production build ignores it.
 
 ## 5. Key design choices
 
 - **Dark and private means dynamic.** Every page is rendered fresh per request, because each needs a new CSP nonce and a session check. Next's `cacheComponents` is off for that reason.
-- **Chinese fonts come from Google at runtime.** Self-hosting them meant about 240 font files on every build. They now load only in Chinese, and the phone's built-in Chinese font is the fallback.
+- **Chinese fonts come from Google at runtime.** Self-hosting them meant about 240 font files on every build. They load only in Chinese, and only after the page appears, so a slow connection to Google can't hold the page back. The device's built-in Chinese font shows until they arrive.
 - **The database is changed only by migration files.** Everything in `supabase/migrations/` can recreate the database from nothing.
+- **Schedule times are wall-clock times.** A block at 09:00 is stored as date plus 09:00, with no timezone. Changing timezone changes what "today" means, but never moves a block. The calendar runs in "UTC" mode purely so that it doesn't shift them, and it's told the current time in your timezone.
+- **Rules and storage are separate.** The schedule rules (`service.ts`, `logic.ts`) talk to storage through one interface (`repo.ts`), with a Supabase version and an in-memory version. This lets the rules be fully tested without a database.
+- **Generation is lazy.** Nothing runs in the background. Blocks are created when you open a schedule page, which suits a free plan with limited scheduled jobs.

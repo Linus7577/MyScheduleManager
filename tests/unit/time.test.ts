@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidTimeZone, todayInTimeZone } from "@/lib/time/today";
+import { isValidTimeZone, todayInTimeZone, wallClockInTimeZone } from "@/lib/time/today";
 
 describe("todayInTimeZone", () => {
   it("rolls over exactly at 00:00 Taipei, which is 16:00 UTC the day before", () => {
@@ -21,6 +21,16 @@ describe("todayInTimeZone", () => {
 
   it("handles month and year boundaries", () => {
     expect(todayInTimeZone("Asia/Taipei", new Date("2026-12-31T16:00:00Z"))).toBe("2027-01-01");
+  });
+});
+
+describe("wallClockInTimeZone", () => {
+  it("gives the owner's local time with no offset", () => {
+    expect(wallClockInTimeZone("Asia/Taipei", new Date("2026-11-03T01:30:05Z"))).toBe("2026-11-03T09:30:05");
+  });
+
+  it("writes midnight as 00:00 on the new date", () => {
+    expect(wallClockInTimeZone("Asia/Taipei", new Date("2026-11-03T16:00:00Z"))).toBe("2026-11-04T00:00:00");
   });
 });
 

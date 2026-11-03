@@ -1,8 +1,17 @@
-import { CalendarDays } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { SealedPage } from "@/components/shell/sealed-page";
+import { getLocale, getTranslations } from "next-intl/server";
+import { CalendarLoader } from "@/features/schedule/components/calendar-loader";
+import { getScheduleContext } from "@/features/schedule/context";
+import { ensureLoopReady } from "@/features/schedule/service";
 
 export default async function CalendarPage() {
-  const t = await getTranslations("calendar");
-  return <SealedPage title={t("title")} flavor={t("flavor")} phase={1} icon={CalendarDays} />;
+  const templates = await getTranslations("templates");
+  const locale = await getLocale();
+  const ctx = await getScheduleContext();
+  await ensureLoopReady(ctx, [templates("seedSemester"), templates("seedExam"), templates("seedHoliday")]);
+
+  return (
+    <div className="mx-auto max-w-5xl">
+      <CalendarLoader timeZone={ctx.timeZone} locale={locale} today={ctx.today} />
+    </div>
+  );
 }

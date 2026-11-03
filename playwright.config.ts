@@ -5,13 +5,16 @@ const GATE_PORT = 3101;
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,
   reporter: "list",
   projects: [
     {
       name: "shell-mobile",
-      testMatch: "shell.spec.ts",
+      testMatch: ["shell.spec.ts", "loop.spec.ts"],
       use: {
         ...devices["Pixel 7"],
         viewport: { width: 390, height: 844 },
@@ -20,7 +23,7 @@ export default defineConfig({
     },
     {
       name: "shell-desktop",
-      testMatch: "shell.spec.ts",
+      testMatch: ["shell.spec.ts", "loop.spec.ts"],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 },
@@ -39,6 +42,7 @@ export default defineConfig({
       command: `npx next dev -p ${SHELL_PORT}`,
       url: `http://localhost:${SHELL_PORT}/login`,
       env: { AUTH_PREVIEW: "true" },
+      stderr: "pipe",
       reuseExistingServer: false,
       timeout: 180_000,
     },

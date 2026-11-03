@@ -40,7 +40,7 @@ git push -u origin main
 **Why:** Supabase is the database and the sign-in system.
 
 1. At supabase.com, create a project. Pick a region near you, such as Tokyo or Singapore, and save the database password somewhere safe.
-2. Open **SQL Editor**, paste the whole of `supabase/migrations/20261103000000_foundation.sql`, and run it. **Why:** this creates the tables and their security rules.
+2. Open **SQL Editor**. For each file in `supabase/migrations/`, oldest first, paste the whole file and run it. **Why:** these create the tables and their security rules.
 3. In the SQL Editor, run this with your own Gmail address. **Why:** it tells the sign-up gate who may create an account.
    ```sql
    insert into private.signup_allowlist (email) values ('you@gmail.com');
@@ -66,7 +66,7 @@ git push -u origin main
 3. Open **Authentication → URL Configuration**. **Why:** Supabase only returns people to addresses on this list.
 4. Set **Site URL** to `http://localhost:3000` for now.
 5. Add `http://localhost:3000/auth/callback` to **Redirect URLs**.
-6. Create `.env.local` from `.env.example`, and fill in the five values from the top section. To make a `CRON_SECRET`, run:
+6. Create `.env.local` from `.env.example`, and fill in the five values from the top section. `node scripts/fill-env.mjs` asks for the Supabase values and your email one at a time, and hides the secret key as you paste it. To make a `CRON_SECRET`, run:
    ```bash
    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    ```

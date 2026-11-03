@@ -1,5 +1,38 @@
 # Changelog
 
+## What changed in Phase 1: The Loop
+
+**Built**
+- Templates: Semester, Exam Week and Holiday are seeded. Create, rename, delete, and make one active from a chosen date.
+- Template editor: add, edit and delete blocks per weekday, with overlap warnings.
+- Daily Loop page: a week strip, plus check-off as done, partial or skipped, each with an icon and colour, and an optional note.
+- Editing a block changes that day only, with an explicit "also apply to the template" option and a confirmation.
+- Rest Day (1 per week, before the day starts) and Shield (3 per month, same day allowed), with limits in `game.config.ts`.
+- Calendar with month, week, day and agenda views, showing blocks and one-off events. Events can be created, edited and deleted, including all-day and multi-day ones.
+- A one-off event in a productive category becomes a block you can check off in the Loop.
+- New database tables in `supabase/migrations/20261103010000_schedule.sql`, all with RLS.
+- Category weights moved into `game.config.ts`, ready for Phase 2.
+
+**Decisions made, using the defaults proposed before Phase 0**
+- A block crossing midnight belongs to its start date. (Phase 2's closeout will wait until it ends.)
+- Switching or editing a template replaces only future blocks you haven't logged or edited.
+- On a Shield day, done and partial blocks keep their progress, and open or skipped blocks become rest.
+
+**Other choices**
+- Future blocks can't be logged, because that would let you earn XP in advance.
+- Productive events must be timed and on one date, because XP is based on minutes. All-day and multi-day events are "Other" only.
+- A Rest Day can be taken back until its day starts, and a Shield until its day ends.
+- FullCalendar v7 (MIT license) is the calendar library.
+- Chinese fonts now load after the page appears. Loading them first let a slow connection to Google hold the whole page back.
+
+**Not done yet**
+- Nothing has run against your real Supabase database yet. The screens are tested with a temporary in-memory store, and the database tables with a test Postgres.
+- Not deployed. Phase 0's sign-in test and Vercel deploy are still open.
+- "Corrections after closeout" arrive with closeout in Phase 2, so for now a block can be changed at any time.
+
+**In the spec, but not assigned to a phase, so not built**
+- Drag to move or resize events, recurring events, calendar search and jump to date (§7.3).
+
 ## What changed in Phase 0: Foundation
 
 **Built**

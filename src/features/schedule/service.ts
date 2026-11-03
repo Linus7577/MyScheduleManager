@@ -1,0 +1,382 @@
+import { isProductive } from "@/config/game.config";
+import {
+  activeTemplateId,
+  addDays,
+  buildInstanceRows,
+  canUndoRestDay,
+  checkDeclareRest,
+  checkDeclareShield,
+  checkEvent,
+  findInstanceOverlaps,
+  generationEnd,
+  restDaysUsedInWeek,
+  shieldsUsedInMonth,
+} from "./logic";
+import type { ScheduleRepo } from "./repo";
+import type {
+  ActionResult,
+  BlockFields,
+  BlockInstance,
+  CalendarEvent,
+  EventFields,
+  FeedItem,
+  InstanceStatus,
+  RestDay,
+  RestKind,
+  ScheduleErrorCode,
+  TemplateBlock,
+} from "./types";
+
+export type ScheduleContext = { repo: ScheduleRepo; today: string };
+
+const OK: ActionResult = { ok: true };
+const fail = (code: ScheduleErrorCode): ActionResult => ({ ok: false, code });
+
+const REST_LOOKUP_DAYS = 45;
+
+async function restDaysAround(ctx: ScheduleContext, date: string): Promise<RestDay[]> {
+  return ctx.repo.listRestDays(addDays(date, -REST_LOOKUP_DAYS), addDays(date, REST_LOOKUP_DAYS));
+}
+
+async function generateInstances(ctx: ScheduleContext, from: string, to: string): Promise<void> {
+  if (from > to) return;
+  const [activations, blocks, restDays] = await Promise.all([
+    ctx.repo.listActivations(),
+    ctx.repo.listBlocks(),
+    ctx.repo.listRestDays(from, to),
+  ]);
+  const rows = buildInstanceRows({
+    from,
+    to,
+    activations,
+    blocks,
+    restDates: new Set(restDays.map((day) => day.date)),
+  });
+  await ctx.repo.insertInstances(rows);
+}
+
+/**
+ * Runs when a schedule page opens. Seeds the templates once, then generates any days not generated yet,
+ * up to the end of next week. Days already generated are never redone, so a block added today can't
+ * appear on a past date.
+ */
+export async function ensureLoopReady(ctx: ScheduleContext, seedNames: string[]): Promise<void> {
+  const templates = await ctx.repo.listTemplates();
+  if (templates.length === 0) {
+    const created = [];
+    for (const name of seedNames) created.push(await ctx.repo.createTemplate(name));
+    await ctx.repo.upsertActivation(created[0].id, ctx.today);
+  }
+  const latest = await ctx.repo.latestTemplateInstanceDate();
+  await generateInstances(ctx, latest ? addDays(latest, 1) : ctx.today, generationEnd(ctx.today));
+}
+
+/** Replaces unlogged, unedited template blocks from this date on. Anything you touched stays. */
+async function regenerateFrom(ctx: ScheduleContext, from: string): Promise<void> {
+  await ctx.repo.deleteRegenerableInstances(from);
+  await generateInstances(ctx, from, generationEnd(ctx.today));
+}
+
+/* Templates */
+
+export async function createTemplate(ctx: ScheduleContext, name: string): Promise<ActionResult> {
+  await ctx.repo.createTemplate(name);
+  return OK;
+}
+
+export async function renameTemplate(ctx: ScheduleContext, id: string, name: string): Promise<ActionResult> {
+  await ctx.repo.renameTemplate(id, name);
+  return OK;
+}
+
+export async function deleteTemplate(ctx: ScheduleContext, id: string): Promise<ActionResult> {
+  const activations = await ctx.repo.listActivations();
+  const inUse =
+    activeTemplateId(ctx.today, activations) === id ||
+    activations.some((activation) => activation.template_id === id && activation.effective_from > ctx.today);
+  if (inUse) return fail("templateInUse");
+
+  await ctx.repo.deleteTemplate(id);
+  return OK;
+}
+
+export async function switchTemplate(
+  ctx: ScheduleContext,
+  id: string,
+  effectiveFrom: string
+): Promise<ActionResult> {
+  if (effectiveFrom < ctx.today) return fail("effectiveInPast");
+  const templates = await ctx.repo.listTemplates();
+  if (!templates.some((template) => template.id === id)) return fail("notFound");
+
+  await ctx.repo.upsertActivation(id, effectiveFrom);
+  await regenerateFrom(ctx, effectiveFrom);
+  return OK;
+}
+
+export async function createBlock(ctx: ScheduleContext, block: Omit<TemplateBlock, "id">): Promise<ActionResult> {
+  await ctx.repo.createBlock(block);
+  await regenerateFrom(ctx, ctx.today);
+  return OK;
+}
+
+export async function updateBlock(
+  ctx: ScheduleContext,
+  id: string,
+  patch: BlockFields & { weekday: number }
+): Promise<ActionResult> {
+  if (!(await ctx.repo.getBlock(id))) return fail("notFound");
+  await ctx.repo.updateBlock(id, patch);
+  await regenerateFrom(ctx, ctx.today);
+  return OK;
+}
+
+export async function deleteBlock(ctx: ScheduleContext, id: string): Promise<ActionResult> {
+  await ctx.repo.deleteRegenerableInstances(ctx.today);
+  await ctx.repo.deleteBlock(id);
+  await generateInstances(ctx, ctx.today, generationEnd(ctx.today));
+  return OK;
+}
+
+/* Instances */
+
+export async function logInstance(
+  ctx: ScheduleContext,
+  id: string,
+  status: Exclude<InstanceStatus, "rest">,
+  logNote: string
+): Promise<ActionResult> {
+  const instance = await ctx.repo.getInstance(id);
+  if (!instance) return fail("notFound");
+  if (instance.date > ctx.today) return fail("futureBlock");
+  if (instance.status === "rest" || instance.is_cancelled) return fail("notLoggable");
+
+  await ctx.repo.updateInstance(id, {
+    status,
+    log_note: logNote,
+    logged_at: status === "planned" ? null : new Date().toISOString(),
+  });
+  return OK;
+}
+
+/** Changes this day only, unless the owner explicitly also applies it to the template. */
+export async function editInstance(
+  ctx: ScheduleContext,
+  id: string,
+  fields: BlockFields,
+  applyToTemplate: boolean
+): Promise<ActionResult> {
+  const instance = await ctx.repo.getInstance(id);
+  if (!instance) return fail("notFound");
+  if (instance.event_id) return fail("eventLinked");
+
+  await ctx.repo.updateInstance(id, { ...fields, is_edited: true });
+
+  if (applyToTemplate && instance.template_block_id) {
+    await ctx.repo.updateBlock(instance.template_block_id, fields);
+    await regenerateFrom(ctx, ctx.today);
+  }
+  return OK;
+}
+
+/** Hidden rather than removed, so generation doesn't bring it back. */
+export async function cancelInstance(ctx: ScheduleContext, id: string): Promise<ActionResult> {
+  const instance = await ctx.repo.getInstance(id);
+  if (!instance) return fail("notFound");
+  if (instance.event_id) return fail("eventLinked");
+  if (instance.status !== "planned" && instance.status !== "rest") return fail("notCancellable");
+
+  await ctx.repo.updateInstance(id, { is_cancelled: true, is_edited: true });
+  return OK;
+}
+
+/* Rest Days and Shields */
+
+async function declareDay(ctx: ScheduleContext, date: string, kind: RestKind): Promise<ActionResult> {
+  const restDays = await restDaysAround(ctx, date);
+  const problem =
+    kind === "rest" ? checkDeclareRest(date, ctx.today, restDays) : checkDeclareShield(date, ctx.today, restDays);
+  if (problem) return fail(problem);
+
+  await ctx.repo.addRestDay(date, kind);
+  // Done and partial blocks keep what they earned. A skipped block on a Shield day stops counting against you.
+  await ctx.repo.setDayStatus(date, ["planned", "skipped"], "rest");
+  return OK;
+}
+
+export const declareRestDay = (ctx: ScheduleContext, date: string) => declareDay(ctx, date, "rest");
+export const declareShield = (ctx: ScheduleContext, date: string) => declareDay(ctx, date, "shield");
+
+export async function undoRestDay(ctx: ScheduleContext, date: string): Promise<ActionResult> {
+  const [day] = await ctx.repo.listRestDays(date, date);
+  if (!day) return fail("notFound");
+  if (!canUndoRestDay(day, ctx.today)) return fail("cannotUndo");
+
+  await ctx.repo.deleteRestDay(date);
+  await ctx.repo.setDayStatus(date, ["rest"], "planned");
+  return OK;
+}
+
+/* One-off events */
+
+function eventInstanceFields(event: EventFields): BlockFields & { date: string } {
+  return {
+    date: event.start_date,
+    start_time: event.start_time as string,
+    end_time: event.end_time as string,
+    category: event.category,
+    title: event.title,
+    notes: event.notes,
+  };
+}
+
+export async function createEvent(ctx: ScheduleContext, event: EventFields): Promise<ActionResult> {
+  const problem = checkEvent(event);
+  if (problem) return fail(problem);
+
+  const created = await ctx.repo.createEvent(event);
+  if (isProductive(event.category)) {
+    const [restDay] = await ctx.repo.listRestDays(event.start_date, event.start_date);
+    await ctx.repo.insertInstances([
+      {
+        ...eventInstanceFields(event),
+        status: restDay ? "rest" : "planned",
+        template_block_id: null,
+        event_id: created.id,
+      },
+    ]);
+  }
+  return OK;
+}
+
+export async function updateEvent(ctx: ScheduleContext, id: string, event: EventFields): Promise<ActionResult> {
+  const problem = checkEvent(event);
+  if (problem) return fail(problem);
+  if (!(await ctx.repo.getEvent(id))) return fail("notFound");
+
+  await ctx.repo.updateEvent(id, event);
+
+  const linked = await ctx.repo.getInstanceByEvent(id);
+  if (!isProductive(event.category)) {
+    if (linked) await ctx.repo.deleteInstance(linked.id);
+    return OK;
+  }
+  if (linked) {
+    await ctx.repo.updateInstance(linked.id, eventInstanceFields(event));
+    return OK;
+  }
+  await ctx.repo.insertInstances([
+    { ...eventInstanceFields(event), status: "planned", template_block_id: null, event_id: id },
+  ]);
+  return OK;
+}
+
+export async function deleteEvent(ctx: ScheduleContext, id: string): Promise<ActionResult> {
+  await ctx.repo.deleteEvent(id);
+  return OK;
+}
+
+/* Reading */
+
+export type DayView = {
+  date: string;
+  instances: BlockInstance[];
+  overlaps: Set<string>;
+  restDay: RestDay | null;
+  restDaysUsed: number;
+  shieldsUsed: number;
+};
+
+export async function getDayView(ctx: ScheduleContext, date: string): Promise<DayView> {
+  // The neighbouring days matter because a block crossing midnight can overlap the next morning.
+  const [nearby, restDays] = await Promise.all([
+    ctx.repo.listInstances(addDays(date, -1), addDays(date, 1)),
+    restDaysAround(ctx, date),
+  ]);
+  const visible = nearby.filter((instance) => !instance.is_cancelled);
+  return {
+    date,
+    instances: visible.filter((instance) => instance.date === date),
+    overlaps: findInstanceOverlaps(visible),
+    restDay: restDays.find((day) => day.date === date) ?? null,
+    restDaysUsed: restDaysUsedInWeek(date, restDays),
+    shieldsUsed: shieldsUsedInMonth(date, restDays),
+  };
+}
+
+function eventEnd(event: CalendarEvent): string {
+  // The calendar treats an all-day end date as exclusive, while events store the last day itself.
+  return event.all_day ? addDays(event.end_date, 1) : `${event.end_date}T${event.end_time}:00`;
+}
+
+export async function getCalendarFeed(ctx: ScheduleContext, from: string, to: string): Promise<FeedItem[]> {
+  const [instances, events] = await Promise.all([ctx.repo.listInstances(from, to), ctx.repo.listEvents(from, to)]);
+  const statusByEvent = new Map(
+    instances.filter((instance) => instance.event_id).map((instance) => [instance.event_id, instance.status])
+  );
+
+  const blockItems: FeedItem[] = instances
+    .filter((instance) => !instance.is_cancelled && !instance.event_id)
+    .map((instance) => {
+      const endDate = instance.end_time <= instance.start_time ? addDays(instance.date, 1) : instance.date;
+      return {
+        id: `block-${instance.id}`,
+        kind: "block",
+        title: instance.title,
+        category: instance.category,
+        status: instance.status,
+        all_day: false,
+        start: `${instance.date}T${instance.start_time}:00`,
+        end: `${endDate}T${instance.end_time}:00`,
+        date: instance.date,
+        event: null,
+      };
+    });
+
+  const eventItems: FeedItem[] = events.map((event) => ({
+    id: `event-${event.id}`,
+    kind: "event",
+    title: event.title,
+    category: event.category,
+    status: statusByEvent.get(event.id) ?? null,
+    all_day: event.all_day,
+    start: event.all_day ? event.start_date : `${event.start_date}T${event.start_time}:00`,
+    end: eventEnd(event),
+    date: event.start_date,
+    event,
+  }));
+
+  return [...blockItems, ...eventItems];
+}
+
+export async function getTemplatesView(ctx: ScheduleContext) {
+  const [templates, activations, blocks] = await Promise.all([
+    ctx.repo.listTemplates(),
+    ctx.repo.listActivations(),
+    ctx.repo.listBlocks(),
+  ]);
+  const upcoming = activations
+    .filter((activation) => activation.effective_from > ctx.today)
+    .sort((a, b) => a.effective_from.localeCompare(b.effective_from));
+
+  return {
+    activeId: activeTemplateId(ctx.today, activations),
+    upcoming,
+    templates: templates.map((template) => ({
+      ...template,
+      blockCount: blocks.filter((block) => block.template_id === template.id).length,
+    })),
+  };
+}
+
+export async function getTemplateEditor(ctx: ScheduleContext, id: string) {
+  const [templates, blocks] = await Promise.all([ctx.repo.listTemplates(), ctx.repo.listBlocks()]);
+  const template = templates.find((candidate) => candidate.id === id);
+  if (!template) return null;
+  return {
+    template,
+    blocks: blocks
+      .filter((block) => block.template_id === id)
+      .sort((a, b) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)),
+  };
+}

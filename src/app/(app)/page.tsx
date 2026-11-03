@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { RuneMark } from "@/components/shell/rune-mark";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getOwnerTimezone } from "@/features/settings/queries";
 import { todayInTimeZone } from "@/lib/time/today";
+import { cn } from "@/lib/utils";
 
 export default async function HomePage() {
   const t = await getTranslations("home");
@@ -23,6 +26,9 @@ export default async function HomePage() {
               {format.dateTime(now, { dateStyle: "full", timeZone })}
             </time>
           </p>
+          <Link href="/loop" className={cn(buttonVariants(), "h-11 px-4")}>
+            {t("openLoop")}
+          </Link>
           <p className="text-xs text-muted-foreground">{t("sealed")}</p>
         </CardContent>
       </Card>
