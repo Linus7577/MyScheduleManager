@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
-import { DEFAULT_TIMEZONE } from "@/config/app.config";
+import { cookies } from "next/headers";
+import { DEFAULT_MOTION, DEFAULT_TIMEZONE, isMotionLevel, MOTION_COOKIE, type MotionLevel } from "@/config/app.config";
 import { getOwner } from "@/lib/auth/owner";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -15,3 +16,8 @@ export const getOwnerTimezone = cache(async (): Promise<string> => {
   if (error) throw new Error("Could not read settings");
   return data?.timezone ?? DEFAULT_TIMEZONE;
 });
+
+export async function getMotionLevel(): Promise<MotionLevel> {
+  const saved = (await cookies()).get(MOTION_COOKIE)?.value;
+  return isMotionLevel(saved) ? saved : DEFAULT_MOTION;
+}

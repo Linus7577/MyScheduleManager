@@ -17,6 +17,7 @@ import type {
  * rules be tested, and the screens be previewed, without a database or a login.
  */
 export interface ScheduleRepo {
+  /** Blocks and days the game has already closed are protected by the rules above this layer. */
   listTemplates(): Promise<LoopTemplate[]>;
   createTemplate(name: string): Promise<LoopTemplate>;
   renameTemplate(id: string, name: string): Promise<void>;

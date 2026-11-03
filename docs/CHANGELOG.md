@@ -1,5 +1,38 @@
 # Changelog
 
+## What changed in Phase 2: The Game
+
+**Built**
+- Game engine: XP, streak, losses, Power, levels and 8 tiers, with every worked example from the spec as a test. All numbers are in `game.config.ts`.
+- Ledger: every XP or Power change is a row. Current totals can be rebuilt from it, and a test proves they match.
+- Day closeout, on your first request of a new day and from the daily cron. It can't count a day twice. The cron replaces the keep-alive job, at `/api/cron/daily`.
+- Corrections: a closed day can be changed for 24 hours, by adding rows and replaying the streak forward.
+- Reckoning screen, Battle Log, a live status strip and Power-state warnings.
+- Collapse after 3 closeouts at Power 0, and tier demotion after 3 closeouts below the tier's level, with the "armor is failing" warning.
+- Placeholder avatars per tier, with aura, eyes, cracks, desaturation and breathing. Ember particles and fog.
+- Level-up and tier-up cinematics, skippable, each playing once.
+- Motion setting (Full, Reduced, Off), which also respects the device's reduced-motion setting.
+- Doom Clock, full screen and compact, with 24 hour segments, block progress, a last-hour alarm and calm gold when everything's done.
+- Focus mode: a timer that keeps the screen awake, counts leaving with no penalty, and asks how it went at the end.
+- New tables in `supabase/migrations/20261103020000_game.sql`, all with RLS. The ledger and closed days are append-only.
+
+**Decisions made, using the defaults proposed before Phase 0**
+- Done and partial score at check-off. Skipped only costs at closeout, so you can change your mind until then.
+- XP uses the streak as of the start of that day. Losses use your displayed tier.
+- Fractional Power stays as decimals, and bands are ≥70, ≥40 and ≥15, so 69.5 is Steady.
+- A day with nothing productive planned is neutral, like a Rest Day.
+- "Other" blocks don't touch Power. An unlogged "Other" block isn't marked skipped either, since it can't cost anything.
+- The 60-minute YouTube cap applies to XP, losses, Power and planned minutes. Watched videos claim those minutes before skipped ones.
+- Tier demotion drops one tier at a time. A collapse at level 1 falls to 0 XP.
+- Rest and Shield days don't advance or reset the streak or either counter.
+- A correction replays the streak forward, but later days keep the XP they earned.
+
+**Not done yet**
+- Nothing has run against your real database or a real midnight. Closeout is tested with simulated dates, and the database function with a test Postgres.
+- Art and animation are functional placeholders. Polish is Phase 7.
+- Later spec items not built here: page-transition veil, and the Home timeline, which arrives with the Phase 3 dashboard.
+- Not deployed. Phase 0's sign-in test and Vercel deploy are still open.
+
 ## What changed in Phase 1: The Loop
 
 **Built**
@@ -28,7 +61,6 @@
 **Not done yet**
 - Nothing has run against your real Supabase database yet. The screens are tested with a temporary in-memory store, and the database tables with a test Postgres.
 - Not deployed. Phase 0's sign-in test and Vercel deploy are still open.
-- "Corrections after closeout" arrive with closeout in Phase 2, so for now a block can be changed at any time.
 
 **In the spec, but not assigned to a phase, so not built**
 - Drag to move or resize events, recurring events, calendar search and jump to date (§7.3).

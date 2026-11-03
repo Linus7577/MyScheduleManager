@@ -17,6 +17,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // cacheComponents is off on purpose: every page is private and per-request, and nonce-based CSP needs dynamic rendering.
   poweredByHeader: false,
+  // Browser tests build into their own folder, so they can run while the app is open on port 3000.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   turbopack: {
     rules: {
       "*.css": {

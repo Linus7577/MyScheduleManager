@@ -19,14 +19,85 @@
     "level": "Lv {level}",
     "xp": "XP",
     "power": "Power",
-    "doomClock": "Doom Clock, not yet awakened"
+    "doomClock": "Time until midnight. Open the Doom Clock.",
+    "armorFailing": "Your armor is failing"
+  },
+  "tiers": {
+    "1": "Hollow Squire",
+    "2": "Ashen Knight",
+    "3": "Shadow Warden",
+    "4": "Bloodbound Reaver",
+    "5": "Dread Warlord",
+    "6": "Abyss Sovereign",
+    "7": "Crimson Tyrant",
+    "8": "The Eclipse"
+  },
+  "powerStates": {
+    "empowered": "Empowered",
+    "steady": "Steady",
+    "wounded": "Wounded",
+    "broken": "Broken"
   },
   "home": {
     "title": "The Keep",
     "today": "Today",
-    "flavor": "The fire is lit, and the night is patient. Your loop waits.",
     "openLoop": "Open the Loop",
-    "sealed": "XP, Power and the avatar awaken in Phase 2."
+    "levelLine": "Level {level} · {state}",
+    "streak": "{count, plural, =0 {No streak yet} one {# day streak} other {# day streak}}",
+    "armorFailing": "Your armor is failing. Regain your level, or lose your tier."
+  },
+  "reckoning": {
+    "title": "The Reckoning",
+    "flavor": "The day is sealed. What you did, and what you didn't, is written.",
+    "xpGained": "XP gained",
+    "xpLost": "XP lost",
+    "power": "Power change",
+    "blocksSkipped": "Blocks skipped",
+    "streak": "Streak",
+    "streakDays": "{count, plural, one {# day} other {# days}}",
+    "collapsed": "Your Power lay at zero for three reckonings. You lost a level.",
+    "demoted": "Your armor gave way. You fell a tier.",
+    "armorFailing": "Your armor is failing.",
+    "dismiss": "Enter"
+  },
+  "cinematic": {
+    "levelUp": "Level up",
+    "tierUp": "A new tier",
+    "levelNumber": "Level {level}",
+    "skip": "Skip",
+    "continue": "Continue"
+  },
+  "battleLog": {
+    "title": "Battle Log",
+    "back": "More",
+    "empty": "No battles yet. The log waits for your first deed.",
+    "xpAmount": "{amount} XP",
+    "powerAmount": "{amount} Power",
+    "reason": {
+      "block_done": "Done",
+      "block_partial": "Partial",
+      "block_changed": "Changed",
+      "block_removed": "Removed",
+      "skipped": "Skipped",
+      "correction": "Correction",
+      "collapse": "Collapse: lost a level"
+    }
+  },
+  "doom": {
+    "title": "Doom Clock",
+    "close": "Close the Doom Clock",
+    "untilMidnight": "until midnight",
+    "allDone": "The night is yours.",
+    "lastHour": "{count, plural, one {# block remains.} other {# blocks remain.}} The Eclipse watches.",
+    "remaining": "{count, plural, one {# block open today} other {# blocks open today}}"
+  },
+  "focus": {
+    "leave": "Leave focus mode",
+    "timeLeft": "time left",
+    "begin": "Begin",
+    "endEarly": "End early",
+    "howDidItGo": "How did it go?",
+    "leftWarning": "You left. The Eclipse noticed. No penalty, but it's counted."
   },
   "sealed": {
     "note": "Sealed until Phase {phase}."
@@ -88,7 +159,9 @@
     "applyConfirm": "Also change this block in the template? Future blocks you haven't logged or edited will change too.",
     "removeForDay": "Remove for this day",
     "removeConfirm": "Remove this block for this day only?",
-    "oneOffEvent": "Edit in Calendar"
+    "oneOffEvent": "Edit in Calendar",
+    "focus": "Focus",
+    "focusBroken": "{count, plural, one {Focus broken once} other {Focus broken # times}}"
   },
   "restDays": {
     "label": "Rest Day and Shield",
@@ -177,7 +250,10 @@
     "eventProductiveTimed": "This category counts like a block, so it needs a start and end time on one date.",
     "eventEndBeforeStart": "The end must be after the start.",
     "eventLinked": "This block comes from a calendar event. Edit it in the Calendar.",
-    "notCancellable": "A logged block can't be removed."
+    "notCancellable": "A logged block can't be removed.",
+    "dayClosed": "That day has been closed. It can only be corrected from the Loop, within 24 hours.",
+    "correctionExpired": "The 24 hours for correcting this day have passed.",
+    "correctionNeedsStatus": "A closed day's block must be done, partial or skipped."
   },
   "oracle": {
     "title": "The Oracle",
@@ -202,6 +278,10 @@
     "languageZhTw": "繁體中文",
     "timezone": "Timezone",
     "timezoneHelp": "Every \"today\", and the midnight closeout, follows this timezone.",
+    "motion": "Motion",
+    "motionFull": "Full",
+    "motionReduced": "Reduced",
+    "motionOff": "Off",
     "save": "Save",
     "saving": "Saving…",
     "saved": "So it is written.",

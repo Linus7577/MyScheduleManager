@@ -11,9 +11,12 @@ Short definitions of terms you'll meet in this project.
 | **activation** | A record saying "this template is active from this date". The latest one on or before a date wins. |
 | **audit log** | An append-only record of important actions, kept for later review. |
 | **auth hook** | Your own code that Supabase runs during sign-in. Ours rejects sign-ups from any other email. |
+| **Battle Log** | The screen showing your ledger: every XP and Power change, and why. |
 | **block instance** | One real block on one real date, such as "Study, Tuesday 3 November, 09:00". Copied from a template block, and it's what you check off. |
 | **client component** | UI code that runs in the browser, needed for interactivity. Never holds secrets. |
 | **closeout** | "The Reckoning": the once-per-day process that settles a finished day. |
+| **collapse** | The penalty for Power sitting at 0 for 3 closeouts in a row: you lose one level. |
+| **correction** | Changing a block after its day closed, allowed for 24 hours. It adds new ledger rows and never edits old ones. |
 | **cron** | A job that runs on a schedule. Vercel Hobby allows each job to run once per day. |
 | **CSP (Content Security Policy)** | A header telling the browser which scripts and connections to allow. It limits damage from injected code. |
 | **environment variable (env var)** | A setting stored outside the code, such as a key. Kept in `.env.local` and on Vercel. |
@@ -32,6 +35,7 @@ Short definitions of terms you'll meet in this project.
 | **publishable key** | The Supabase key that's safe in the browser (`sb_publishable_...`). It can only do what RLS allows. |
 | **PWA** | Progressive Web App: a website you can install on your phone like an app. |
 | **rate limiting** | Capping how often something can be called, to protect a free quota. |
+| **Reckoning** | The screen summarizing what closeout did, shown on your first open after one. Also the name of closeout itself. |
 | **repository (repo)** | The one piece of code that talks to storage for a feature. Swapping it swaps where data lives. (Different from a GitHub repo, which holds the code.) |
 | **Rest Day** | A planned day off, 1 per week, declared before the day starts. Blocks become "rest": no XP, no loss. |
 | **RLS (Row Level Security)** | Rules inside the database that decide which rows each user can touch. |
@@ -44,5 +48,6 @@ Short definitions of terms you'll meet in this project.
 | **Tailwind** | A CSS system where you style with small classes. Our colours are defined in `globals.css`. |
 | **template** | One version of your repeating week, such as Semester or Exam Week. Its blocks are the plan, not the real schedule. |
 | **wall-clock time** | A time as read off a clock, like 09:00, with no timezone attached. Blocks are stored this way. |
+| **transaction** | A group of database changes that succeed or fail as one, so nothing is left half done. |
 | **VAPID** | Keys that identify your app to the browser's push service, so only it can send you notifications. |
 | **Zod** | A library that checks data has the expected shape, and rejects it if not. |

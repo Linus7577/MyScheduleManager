@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireOwner } from "@/lib/auth/owner";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { setLocaleCookie } from "./locale-cookie";
+import { setLocaleCookie, setMotionCookie } from "./locale-cookie";
 import { settingsSchema, type SaveSettingsState } from "./schema";
 
 export async function saveSettings(_previous: SaveSettingsState, formData: FormData): Promise<SaveSettingsState> {
@@ -12,11 +12,13 @@ export async function saveSettings(_previous: SaveSettingsState, formData: FormD
   const parsed = settingsSchema.safeParse({
     locale: formData.get("locale"),
     timezone: formData.get("timezone"),
+    motion: formData.get("motion"),
   });
   if (!parsed.success) return { status: "invalid" };
 
   if (owner.preview) {
     await setLocaleCookie(parsed.data.locale);
+    await setMotionCookie(parsed.data.motion);
     revalidatePath("/", "layout");
     return { status: "savedPreview" };
   }
@@ -30,6 +32,7 @@ export async function saveSettings(_previous: SaveSettingsState, formData: FormD
   if (error) return { status: "failed" };
 
   await setLocaleCookie(parsed.data.locale);
+  await setMotionCookie(parsed.data.motion);
   revalidatePath("/", "layout");
   return { status: "saved" };
 }

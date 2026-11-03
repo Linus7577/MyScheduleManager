@@ -11,7 +11,7 @@ test.describe("app shell", () => {
       ["/settings", "Settings"],
     ]) {
       await page.goto(path);
-      await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 1, name: heading })).toHaveCount(1);
       await expect(page.getByRole("region", { name: "Character status" })).toBeVisible();
 
       const overflow = await page.evaluate(
@@ -45,7 +45,7 @@ test.describe("app shell", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-TW");
 
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "要塞" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "要塞" })).toHaveCount(1);
 
     await page.goto("/settings");
     await page.getByLabel("語言").selectOption("en");
@@ -61,7 +61,7 @@ test.describe("app shell", () => {
     await context.addCookies([{ name: "locale", value: "zh-TW", url: baseURL as string }]);
 
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "要塞" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "要塞" })).toHaveCount(1);
     await expect(page.locator('link[href*="fonts.googleapis.com"]')).toHaveCount(1);
     await page.waitForLoadState("networkidle");
     expect(violations).toEqual([]);

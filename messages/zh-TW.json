@@ -19,14 +19,85 @@
     "level": "等級 {level}",
     "xp": "經驗",
     "power": "力量",
-    "doomClock": "末日之鐘，尚未甦醒"
+    "doomClock": "距離午夜的時間。開啟末日之鐘。",
+    "armorFailing": "你的鎧甲正在崩解"
+  },
+  "tiers": {
+    "1": "空洞侍從",
+    "2": "灰燼騎士",
+    "3": "暗影守望者",
+    "4": "血誓掠奪者",
+    "5": "恐懼軍閥",
+    "6": "深淵君主",
+    "7": "赤紅暴君",
+    "8": "日蝕"
+  },
+  "powerStates": {
+    "empowered": "力量充盈",
+    "steady": "穩定",
+    "wounded": "負傷",
+    "broken": "崩潰"
   },
   "home": {
     "title": "要塞",
     "today": "今天",
-    "flavor": "爐火已燃，長夜耐心等待。你的循環正候著你。",
     "openLoop": "開啟循環",
-    "sealed": "經驗、力量與角色將於第 2 階段甦醒。"
+    "levelLine": "等級 {level} · {state}",
+    "streak": "{count, plural, =0 {尚無連續紀錄} other {連續 # 天}}",
+    "armorFailing": "你的鎧甲正在崩解。奪回等級，否則將失去階級。"
+  },
+  "reckoning": {
+    "title": "清算",
+    "flavor": "這一天已被封印。你做過與未做的，皆已記下。",
+    "xpGained": "獲得經驗",
+    "xpLost": "失去經驗",
+    "power": "力量變化",
+    "blocksSkipped": "略過時段",
+    "streak": "連續紀錄",
+    "streakDays": "{count, plural, other {# 天}}",
+    "collapsed": "你的力量連續三次清算都歸零，失去了一個等級。",
+    "demoted": "你的鎧甲崩落，跌落了一個階級。",
+    "armorFailing": "你的鎧甲正在崩解。",
+    "dismiss": "進入"
+  },
+  "cinematic": {
+    "levelUp": "升級",
+    "tierUp": "新的階級",
+    "levelNumber": "等級 {level}",
+    "skip": "略過",
+    "continue": "繼續"
+  },
+  "battleLog": {
+    "title": "戰鬥紀錄",
+    "back": "更多",
+    "empty": "尚無戰鬥。紀錄正等待你的第一項事蹟。",
+    "xpAmount": "{amount} 經驗",
+    "powerAmount": "{amount} 力量",
+    "reason": {
+      "block_done": "完成",
+      "block_partial": "部分",
+      "block_changed": "變更",
+      "block_removed": "移除",
+      "skipped": "略過",
+      "correction": "修正",
+      "collapse": "崩潰：失去一個等級"
+    }
+  },
+  "doom": {
+    "title": "末日之鐘",
+    "close": "關閉末日之鐘",
+    "untilMidnight": "距離午夜",
+    "allDone": "今夜屬於你。",
+    "lastHour": "{count, plural, other {還剩 # 個時段。}}日蝕正注視著你。",
+    "remaining": "{count, plural, other {今天還有 # 個時段}}"
+  },
+  "focus": {
+    "leave": "離開專注模式",
+    "timeLeft": "剩餘時間",
+    "begin": "開始",
+    "endEarly": "提早結束",
+    "howDidItGo": "進行得如何？",
+    "leftWarning": "你離開了。日蝕已察覺。沒有懲罰，但會被記下。"
   },
   "sealed": {
     "note": "封印至第 {phase} 階段。"
@@ -88,7 +159,9 @@
     "applyConfirm": "也要變更範本中的此時段嗎？尚未記錄或編輯過的未來時段也會一併變更。",
     "removeForDay": "移除當天的時段",
     "removeConfirm": "只移除當天的此時段嗎？",
-    "oneOffEvent": "到行事曆編輯"
+    "oneOffEvent": "到行事曆編輯",
+    "focus": "專注",
+    "focusBroken": "{count, plural, other {專注中斷 # 次}}"
   },
   "restDays": {
     "label": "休息日與護盾",
@@ -177,7 +250,10 @@
     "eventProductiveTimed": "此類別視同時段，必須在同一天有開始與結束時間。",
     "eventEndBeforeStart": "結束必須晚於開始。",
     "eventLinked": "此時段來自行事曆活動，請到行事曆編輯。",
-    "notCancellable": "已記錄的時段無法移除。"
+    "notCancellable": "已記錄的時段無法移除。",
+    "dayClosed": "這天已結算，只能在 24 小時內從循環頁修正。",
+    "correctionExpired": "修正這天的 24 小時已過。",
+    "correctionNeedsStatus": "已結算的時段必須是完成、部分或略過。"
   },
   "oracle": {
     "title": "神諭",
@@ -202,6 +278,10 @@
     "languageZhTw": "繁體中文",
     "timezone": "時區",
     "timezoneHelp": "所有「今天」的判定與午夜結算，都依照此時區。",
+    "motion": "動態效果",
+    "motionFull": "完整",
+    "motionReduced": "減少",
+    "motionOff": "關閉",
     "save": "儲存",
     "saving": "儲存中…",
     "saved": "已記錄在案。",

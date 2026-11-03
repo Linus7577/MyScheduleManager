@@ -171,6 +171,88 @@
   }
 }
 
+/* Game motion. Each one only runs at the Full motion level. */
+@keyframes avatar-breathe {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.015);
+  }
+}
+
+@keyframes avatar-flicker {
+  0%,
+  100% {
+    opacity: 0.14;
+  }
+  45% {
+    opacity: 0.05;
+  }
+  55% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes doom-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes doom-heartbeat {
+  0%,
+  40%,
+  100% {
+    opacity: 0.25;
+  }
+  15% {
+    opacity: 1;
+  }
+  28% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes fog-drift {
+  from {
+    transform: translateX(-6%);
+  }
+  to {
+    transform: translateX(6%);
+  }
+}
+
+.fog-layer {
+  background: radial-gradient(60% 40% at 30% 85%, rgb(232 228 220 / 7%), transparent),
+    radial-gradient(50% 35% at 75% 90%, rgb(220 20 60 / 8%), transparent);
+}
+
+.doom-vignette {
+  box-shadow: inset 0 0 120px 30px rgb(220 20 60 / 45%);
+}
+
+[data-motion="full"] .avatar-breathe {
+  transform-origin: center bottom;
+  animation: avatar-breathe 2s ease-in-out infinite alternate;
+}
+
+[data-motion="full"] .avatar-flicker {
+  animation: avatar-flicker 1.4s linear infinite;
+}
+
+[data-motion="full"] .doom-pulse {
+  animation: doom-pulse 2s ease-in-out infinite;
+}
+
+[data-motion="full"] .doom-vignette {
+  animation: doom-heartbeat 1.4s ease-in-out infinite;
+}
+
+[data-motion="full"] .fog-layer {
+  animation: fog-drift 18s ease-in-out infinite alternate;
+}
+
 /* The calendar library's theme colours, set to the palette for this page only. */
 .calendar-shell {
   --fc-classic-button: var(--color-surface-2);

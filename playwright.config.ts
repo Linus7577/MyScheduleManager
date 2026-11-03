@@ -14,7 +14,7 @@ export default defineConfig({
   projects: [
     {
       name: "shell-mobile",
-      testMatch: ["shell.spec.ts", "loop.spec.ts"],
+      testMatch: ["game.spec.ts", "loop.spec.ts", "shell.spec.ts"],
       use: {
         ...devices["Pixel 7"],
         viewport: { width: 390, height: 844 },
@@ -23,7 +23,7 @@ export default defineConfig({
     },
     {
       name: "shell-desktop",
-      testMatch: ["shell.spec.ts", "loop.spec.ts"],
+      testMatch: ["game.spec.ts", "loop.spec.ts", "shell.spec.ts"],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 },
@@ -41,7 +41,7 @@ export default defineConfig({
       // Dev server with the preview flag, so the signed-in shell can be tested without a Google login.
       command: `npx next dev -p ${SHELL_PORT}`,
       url: `http://localhost:${SHELL_PORT}/login`,
-      env: { AUTH_PREVIEW: "true" },
+      env: { AUTH_PREVIEW: "true", NEXT_DIST_DIR: ".next-e2e" },
       stderr: "pipe",
       reuseExistingServer: false,
       timeout: 180_000,

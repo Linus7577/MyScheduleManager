@@ -31,10 +31,8 @@ async function run<S extends z.ZodType>(
 
   try {
     const result = await change(await getScheduleContext(), parsed.data);
-    if (result.ok) {
-      revalidatePath("/loop", "layout");
-      revalidatePath("/calendar");
-    }
+    // The whole shell refreshes, because the status strip shows XP and Power on every page.
+    if (result.ok) revalidatePath("/", "layout");
     return result;
   } catch (error) {
     unstable_rethrow(error);

@@ -12,6 +12,7 @@ const SUPABASE_STUB = `
   create role anon nologin;
   create role authenticated nologin;
   create role supabase_auth_admin nologin;
+  create role service_role nologin bypassrls;
   create schema auth;
   create table auth.users (id uuid primary key, email text);
   create function auth.uid() returns uuid language sql stable as
@@ -238,6 +239,140 @@ describe("schedule tables", () => {
         [OWNER]
       )
     ).rejects.toThrow(/check constraint/);
+  });
+});
+
+describe("game tables and the atomic commit", () => {
+  const GAME_TABLES = ["game_state", "game_ledger", "closed_days", "daily_summaries"];
+
+  const baseState = {
+    total_xp: 60,
+    power: 94.5,
+    tier: 1,
+    streak_days: 1,
+    power_zero_count: 0,
+    demotion_count: 0,
+    last_closed_date: "2026-11-02",
+  };
+
+  const commitPayload = (patch: Record<string, unknown> = {}) => ({
+    expected_version: 0,
+    close_date: "2026-11-02",
+    instances: [],
+    ledger: [
+      {
+        date: "2026-11-02",
+        source: "closeout",
+        block_instance_id: null,
+        block_title: "Study",
+        reason: "skipped",
+        delta_xp: -15,
+        delta_power: -6,
+        tier: 1,
+      },
+    ],
+    state: baseState,
+    summaries: [],
+    audit: [{ actor: "system", action: "day_closeout", entity: "2026-11-02", details: {} }],
+    ...patch,
+  });
+
+  const callCommit = (owner: string, payload: unknown) =>
+    db.query<{ result: boolean }>("select public.apply_game_commit($1, $2::jsonb) as result", [
+      owner,
+      JSON.stringify(payload),
+    ]);
+
+  beforeAll(async () => {
+    await db.query("insert into public.game_state (user_id) values ($1)", [OWNER]);
+  });
+
+  it.each(GAME_TABLES)("%s is invisible to the anon key", async (table) => {
+    await asUser(null, "anon", async () => {
+      await expect(db.query(`select * from public.${table}`)).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it("the anon key can't call the commit", async () => {
+    await asUser(null, "anon", async () => {
+      await expect(callCommit(OWNER, commitPayload())).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it("another user can't commit as the owner", async () => {
+    await asUser(STRANGER, "authenticated", async () => {
+      const { rows } = await callCommit(OWNER, commitPayload());
+      expect(rows[0].result).toBe(false);
+    });
+    const { rows } = await db.query<{ total_xp: number }>("select total_xp from public.game_state where user_id = $1", [OWNER]);
+    expect(rows[0].total_xp).toBe(0);
+  });
+
+  it("applies everything together", async () => {
+    await asUser(OWNER, "authenticated", async () => {
+      const { rows } = await callCommit(OWNER, commitPayload());
+      expect(rows[0].result).toBe(true);
+
+      const state = await db.query<{ total_xp: number; version: number; power: string }>(
+        "select total_xp, version, power from public.game_state"
+      );
+      expect(state.rows[0].total_xp).toBe(60);
+      expect(state.rows[0].version).toBe(1);
+      expect(Number(state.rows[0].power)).toBe(94.5);
+
+      expect((await db.query("select * from public.game_ledger")).rows).toHaveLength(1);
+      expect((await db.query("select * from public.closed_days")).rows).toHaveLength(1);
+      expect((await db.query("select * from public.audit_log where action = 'day_closeout'")).rows).toHaveLength(1);
+    });
+  });
+
+  it("closing the same day twice changes nothing at all", async () => {
+    await asUser(OWNER, "authenticated", async () => {
+      const { rows } = await callCommit(
+        OWNER,
+        commitPayload({ expected_version: 1, state: { ...baseState, total_xp: 999 } })
+      );
+      expect(rows[0].result).toBe(false);
+
+      const state = await db.query<{ total_xp: number; version: number }>("select total_xp, version from public.game_state");
+      expect(state.rows[0]).toEqual({ total_xp: 60, version: 1 });
+      expect((await db.query("select * from public.game_ledger")).rows).toHaveLength(1);
+    });
+  });
+
+  it("refuses a change based on an out-of-date state", async () => {
+    await asUser(OWNER, "authenticated", async () => {
+      const { rows } = await callCommit(
+        OWNER,
+        commitPayload({ expected_version: 0, close_date: null, state: { ...baseState, total_xp: 999 } })
+      );
+      expect(rows[0].result).toBe(false);
+      const state = await db.query<{ total_xp: number }>("select total_xp from public.game_state");
+      expect(state.rows[0].total_xp).toBe(60);
+    });
+  });
+
+  it("the ledger and closed days are append-only, even for the owner", async () => {
+    await asUser(OWNER, "authenticated", async () => {
+      await expect(db.query("update public.game_ledger set delta_xp = 9999")).rejects.toThrow(/permission denied/);
+      await expect(db.query("delete from public.game_ledger")).rejects.toThrow(/permission denied/);
+      await expect(db.query("truncate public.game_ledger")).rejects.toThrow(/permission denied/);
+      await expect(db.query("delete from public.closed_days")).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it("another user sees none of the owner's game data", async () => {
+    await asUser(STRANGER, "authenticated", async () => {
+      for (const table of GAME_TABLES) {
+        expect((await db.query(`select * from public.${table}`)).rows).toEqual([]);
+      }
+    });
+  });
+
+  it("the database itself refuses impossible values", async () => {
+    await expect(db.query("update public.game_state set total_xp = -1")).rejects.toThrow(/check constraint/);
+    await expect(db.query("update public.game_state set power = 101")).rejects.toThrow(/check constraint/);
+    await expect(db.query("update public.game_state set tier = 9")).rejects.toThrow(/check constraint/);
   });
 });
 

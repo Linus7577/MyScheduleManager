@@ -1,4 +1,5 @@
-import type { ScheduleRepo } from "./repo";
+import type { AuditEntry, ClosedDay, DailySummary, GameState, LedgerEntry } from "@/features/game/types";
+import type { AppRepo } from "./generation";
 import type {
   BlockInstance,
   CalendarEvent,
@@ -15,6 +16,11 @@ type Store = {
   instances: BlockInstance[];
   restDays: RestDay[];
   events: CalendarEvent[];
+  game: GameState | null;
+  ledger: LedgerEntry[];
+  closedDays: ClosedDay[];
+  summaries: DailySummary[];
+  audit: AuditEntry[];
 };
 
 const emptyStore = (): Store => ({
@@ -24,13 +30,99 @@ const emptyStore = (): Store => ({
   instances: [],
   restDays: [],
   events: [],
+  game: null,
+  ledger: [],
+  closedDays: [],
+  summaries: [],
+  audit: [],
 });
 
 const newId = () => crypto.randomUUID();
 
 /** Stands in for Supabase in tests and login-free preview. Nothing here is ever saved. */
-export function createMemoryRepo(store: Store = emptyStore()): ScheduleRepo {
+export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
   return {
+    async getGameState() {
+      return store.game;
+    },
+    async createGameState() {
+      store.game ??= {
+        total_xp: 0,
+        power: 100,
+        tier: 1,
+        streak_days: 0,
+        power_zero_count: 0,
+        demotion_count: 0,
+        last_closed_date: null,
+        version: 0,
+        seen_level: 1,
+        seen_tier: 1,
+      };
+    },
+    async commitGame(commit) {
+      if (!store.game || store.game.version !== commit.expected_version) return false;
+      if (commit.close_date) {
+        if (store.closedDays.some((day) => day.date === commit.close_date)) return false;
+        store.closedDays.push({ date: commit.close_date, created_at: new Date().toISOString() });
+      }
+      store.game = { ...store.game, ...commit.state, version: store.game.version + 1 };
+      for (const change of commit.instances) {
+        store.instances = store.instances.map((i) => (i.id === change.id ? { ...i, ...change } : i));
+      }
+      for (const entry of commit.ledger) {
+        store.ledger.push({ ...entry, id: newId(), created_at: new Date().toISOString() });
+      }
+      for (const summary of commit.summaries) {
+        const existing = store.summaries.find((day) => day.date === summary.date);
+        if (existing) {
+          store.summaries = store.summaries.map((day) =>
+            day.date === summary.date ? { ...summary, seen_at: day.seen_at } : day
+          );
+        } else {
+          store.summaries.push(summary);
+        }
+      }
+      store.audit.push(...commit.audit);
+      return true;
+    },
+    async setSeenProgress(level, tier) {
+      if (store.game) store.game = { ...store.game, seen_level: level, seen_tier: tier };
+    },
+
+    async listLedger(limit) {
+      return [...store.ledger].reverse().slice(0, limit);
+    },
+    async listLedgerForBlocks(blockIds) {
+      return store.ledger.filter((entry) => entry.block_instance_id && blockIds.includes(entry.block_instance_id));
+    },
+    async listAllLedger() {
+      return [...store.ledger];
+    },
+
+    async getClosedDay(date) {
+      return store.closedDays.find((day) => day.date === date) ?? null;
+    },
+    async earliestInstanceDate() {
+      const dates = store.instances.map((i) => i.date).sort();
+      return dates[0] ?? null;
+    },
+
+    async getSummary(date) {
+      return store.summaries.find((day) => day.date === date) ?? null;
+    },
+    async listSummariesFrom(date) {
+      return store.summaries.filter((day) => day.date >= date).sort((a, b) => a.date.localeCompare(b.date));
+    },
+    async latestSummary() {
+      return [...store.summaries].sort((a, b) => a.date.localeCompare(b.date)).at(-1) ?? null;
+    },
+    async listUnseenSummaries() {
+      return store.summaries.filter((day) => !day.seen_at).sort((a, b) => a.date.localeCompare(b.date));
+    },
+    async markSummariesSeen(at) {
+      store.summaries = store.summaries.map((day) => (day.seen_at ? day : { ...day, seen_at: at }));
+    },
+
     async listTemplates() {
       return [...store.templates];
     },
@@ -169,8 +261,12 @@ export function createMemoryRepo(store: Store = emptyStore()): ScheduleRepo {
 
 const shared = globalThis as unknown as { previewScheduleStore?: Store };
 
+export function resetPreviewStore(): void {
+  shared.previewScheduleStore = emptyStore();
+}
+
 /** One store per dev server, shared across requests, so preview behaves like a real database. */
-export function getPreviewRepo(): ScheduleRepo {
+export function getPreviewRepo(): AppRepo {
   shared.previewScheduleStore ??= emptyStore();
   return createMemoryRepo(shared.previewScheduleStore);
 }

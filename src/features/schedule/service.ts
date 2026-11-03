@@ -1,8 +1,9 @@
 import { isProductive } from "@/config/game.config";
+import { logBlock, rescoreBlock, reverseBlock } from "@/features/game/service";
+import { generateInstances, generateMissingInstances, type ScheduleContext } from "./generation";
 import {
   activeTemplateId,
   addDays,
-  buildInstanceRows,
   canUndoRestDay,
   checkDeclareRest,
   checkDeclareShield,
@@ -12,7 +13,6 @@ import {
   restDaysUsedInWeek,
   shieldsUsedInMonth,
 } from "./logic";
-import type { ScheduleRepo } from "./repo";
 import type {
   ActionResult,
   BlockFields,
@@ -27,7 +27,7 @@ import type {
   TemplateBlock,
 } from "./types";
 
-export type ScheduleContext = { repo: ScheduleRepo; today: string };
+export type { ScheduleContext };
 
 const OK: ActionResult = { ok: true };
 const fail = (code: ScheduleErrorCode): ActionResult => ({ ok: false, code });
@@ -38,28 +38,7 @@ async function restDaysAround(ctx: ScheduleContext, date: string): Promise<RestD
   return ctx.repo.listRestDays(addDays(date, -REST_LOOKUP_DAYS), addDays(date, REST_LOOKUP_DAYS));
 }
 
-async function generateInstances(ctx: ScheduleContext, from: string, to: string): Promise<void> {
-  if (from > to) return;
-  const [activations, blocks, restDays] = await Promise.all([
-    ctx.repo.listActivations(),
-    ctx.repo.listBlocks(),
-    ctx.repo.listRestDays(from, to),
-  ]);
-  const rows = buildInstanceRows({
-    from,
-    to,
-    activations,
-    blocks,
-    restDates: new Set(restDays.map((day) => day.date)),
-  });
-  await ctx.repo.insertInstances(rows);
-}
-
-/**
- * Runs when a schedule page opens. Seeds the templates once, then generates any days not generated yet,
- * up to the end of next week. Days already generated are never redone, so a block added today can't
- * appear on a past date.
- */
+/** Runs when a schedule page opens. Seeds the templates once, then generates any days not generated yet. */
 export async function ensureLoopReady(ctx: ScheduleContext, seedNames: string[]): Promise<void> {
   const templates = await ctx.repo.listTemplates();
   if (templates.length === 0) {
@@ -67,8 +46,11 @@ export async function ensureLoopReady(ctx: ScheduleContext, seedNames: string[])
     for (const name of seedNames) created.push(await ctx.repo.createTemplate(name));
     await ctx.repo.upsertActivation(created[0].id, ctx.today);
   }
-  const latest = await ctx.repo.latestTemplateInstanceDate();
-  await generateInstances(ctx, latest ? addDays(latest, 1) : ctx.today, generationEnd(ctx.today));
+  await generateMissingInstances(ctx);
+}
+
+async function isDayClosed(ctx: ScheduleContext, date: string): Promise<boolean> {
+  return (await ctx.repo.getClosedDay(date)) !== null;
 }
 
 /** Replaces unlogged, unedited template blocks from this date on. Anything you touched stays. */
@@ -146,17 +128,7 @@ export async function logInstance(
   status: Exclude<InstanceStatus, "rest">,
   logNote: string
 ): Promise<ActionResult> {
-  const instance = await ctx.repo.getInstance(id);
-  if (!instance) return fail("notFound");
-  if (instance.date > ctx.today) return fail("futureBlock");
-  if (instance.status === "rest" || instance.is_cancelled) return fail("notLoggable");
-
-  await ctx.repo.updateInstance(id, {
-    status,
-    log_note: logNote,
-    logged_at: status === "planned" ? null : new Date().toISOString(),
-  });
-  return OK;
+  return logBlock(ctx, id, status, logNote);
 }
 
 /** Changes this day only, unless the owner explicitly also applies it to the template. */
@@ -169,8 +141,10 @@ export async function editInstance(
   const instance = await ctx.repo.getInstance(id);
   if (!instance) return fail("notFound");
   if (instance.event_id) return fail("eventLinked");
+  if (await isDayClosed(ctx, instance.date)) return fail("dayClosed");
 
   await ctx.repo.updateInstance(id, { ...fields, is_edited: true });
+  await rescoreBlock(ctx, id);
 
   if (applyToTemplate && instance.template_block_id) {
     await ctx.repo.updateBlock(instance.template_block_id, fields);
@@ -185,6 +159,7 @@ export async function cancelInstance(ctx: ScheduleContext, id: string): Promise<
   if (!instance) return fail("notFound");
   if (instance.event_id) return fail("eventLinked");
   if (instance.status !== "planned" && instance.status !== "rest") return fail("notCancellable");
+  if (await isDayClosed(ctx, instance.date)) return fail("dayClosed");
 
   await ctx.repo.updateInstance(id, { is_cancelled: true, is_edited: true });
   return OK;
@@ -233,6 +208,7 @@ function eventInstanceFields(event: EventFields): BlockFields & { date: string }
 export async function createEvent(ctx: ScheduleContext, event: EventFields): Promise<ActionResult> {
   const problem = checkEvent(event);
   if (problem) return fail(problem);
+  if (isProductive(event.category) && (await isDayClosed(ctx, event.start_date))) return fail("dayClosed");
 
   const created = await ctx.repo.createEvent(event);
   if (isProductive(event.category)) {
@@ -254,15 +230,23 @@ export async function updateEvent(ctx: ScheduleContext, id: string, event: Event
   if (problem) return fail(problem);
   if (!(await ctx.repo.getEvent(id))) return fail("notFound");
 
+  const linked = await ctx.repo.getInstanceByEvent(id);
+  // A closed day's block has been counted, and the date it would move to may be closed as well.
+  if (linked && (await isDayClosed(ctx, linked.date))) return fail("dayClosed");
+  if (await isDayClosed(ctx, event.start_date)) return fail("dayClosed");
+
   await ctx.repo.updateEvent(id, event);
 
-  const linked = await ctx.repo.getInstanceByEvent(id);
   if (!isProductive(event.category)) {
-    if (linked) await ctx.repo.deleteInstance(linked.id);
+    if (linked) {
+      await reverseBlock(ctx, linked);
+      await ctx.repo.deleteInstance(linked.id);
+    }
     return OK;
   }
   if (linked) {
     await ctx.repo.updateInstance(linked.id, eventInstanceFields(event));
+    await rescoreBlock(ctx, linked.id);
     return OK;
   }
   await ctx.repo.insertInstances([
@@ -272,6 +256,11 @@ export async function updateEvent(ctx: ScheduleContext, id: string, event: Event
 }
 
 export async function deleteEvent(ctx: ScheduleContext, id: string): Promise<ActionResult> {
+  const linked = await ctx.repo.getInstanceByEvent(id);
+  if (linked) {
+    if (await isDayClosed(ctx, linked.date)) return fail("dayClosed");
+    await reverseBlock(ctx, linked);
+  }
   await ctx.repo.deleteEvent(id);
   return OK;
 }

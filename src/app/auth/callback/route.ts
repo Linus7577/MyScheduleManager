@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isLocale } from "@/config/app.config";
-import { setLocaleCookie } from "@/features/settings/locale-cookie";
+import { isLocale, isMotionLevel } from "@/config/app.config";
+import { setLocaleCookie, setMotionCookie } from "@/features/settings/locale-cookie";
 import { isAllowedEmail } from "@/lib/auth/access";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -18,9 +18,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/access-denied`);
   }
 
-  // Bring the saved language to a new device.
-  const { data: settings } = await supabase.from("settings").select("locale").maybeSingle();
+  // Bring the saved preferences to a new device.
+  const { data: settings } = await supabase.from("settings").select("locale, motion").maybeSingle();
   if (isLocale(settings?.locale)) await setLocaleCookie(settings.locale);
+  if (isMotionLevel(settings?.motion)) await setMotionCookie(settings.motion);
 
   return NextResponse.redirect(`${origin}/`);
 }

@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ScheduleRepo } from "./repo";
+import type { DailySummary, GameState, LedgerEntry } from "@/features/game/types";
+import type { AppRepo } from "./generation";
 import type { BlockInstance, CalendarEvent, TemplateBlock } from "./types";
 
 function unwrapMaybe<T>(result: { data: T | null; error: unknown }): T | null {
@@ -39,9 +40,101 @@ const toEvent = (row: CalendarEvent): CalendarEvent => ({
   end_time: row.end_time && shortTime(row.end_time),
 });
 
-/** Every query runs as the signed-in owner, so RLS still applies underneath this code. */
-export function createSupabaseRepo(db: SupabaseClient, userId: string): ScheduleRepo {
+// Postgres sends numeric values as strings or numbers depending on size, so Power is always converted.
+const toGameState = (row: GameState): GameState => ({ ...row, power: Number(row.power) });
+const toLedgerEntry = (row: LedgerEntry): LedgerEntry => ({ ...row, delta_power: Number(row.delta_power) });
+const toSummary = (row: DailySummary): DailySummary => ({ ...row, power_change: Number(row.power_change) });
+
+const SUMMARY_COLUMNS =
+  "date, day_type, planned_minutes, done_minutes, partial_minutes, skipped_minutes, blocks_skipped, xp_gained, " +
+  "xp_lost, power_change, counted, streak_before, streak_after, tier_before, tier_after, collapsed, demoted, seen_at";
+const LEDGER_COLUMNS =
+  "id, date, source, block_instance_id, block_title, reason, delta_xp, delta_power, tier, created_at";
+const STATE_COLUMNS =
+  "total_xp, power, tier, streak_days, power_zero_count, demotion_count, last_closed_date, version, seen_level, seen_tier";
+
+/**
+ * Every query normally runs as the signed-in owner, so RLS still applies underneath this code.
+ * The daily cron passes a server-only client with no session, and uses the same queries for the one owner.
+ */
+export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo {
   return {
+    async getGameState() {
+      const row = unwrapMaybe(await db.from("game_state").select(STATE_COLUMNS).eq("user_id", userId).maybeSingle());
+      return row ? toGameState(row as unknown as GameState) : null;
+    },
+    async createGameState() {
+      check(
+        await db.from("game_state").upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true })
+      );
+    },
+    async commitGame(commit) {
+      const result = await db.rpc("apply_game_commit", { owner_id: userId, commit_data: commit });
+      if (result.error) throw new Error("Game commit failed");
+      return result.data === true;
+    },
+    async setSeenProgress(level, tier) {
+      check(await db.from("game_state").update({ seen_level: level, seen_tier: tier }).eq("user_id", userId));
+    },
+
+    async listLedger(limit) {
+      const rows = unwrap(
+        await db.from("game_ledger").select(LEDGER_COLUMNS).order("created_at", { ascending: false }).limit(limit)
+      ) as unknown as LedgerEntry[];
+      return rows.map(toLedgerEntry);
+    },
+    async listLedgerForBlocks(blockIds) {
+      if (blockIds.length === 0) return [];
+      const rows = unwrap(
+        await db.from("game_ledger").select(LEDGER_COLUMNS).in("block_instance_id", blockIds)
+      ) as unknown as LedgerEntry[];
+      return rows.map(toLedgerEntry);
+    },
+    async listAllLedger() {
+      const rows = unwrap(
+        await db.from("game_ledger").select(LEDGER_COLUMNS).order("created_at")
+      ) as unknown as LedgerEntry[];
+      return rows.map(toLedgerEntry);
+    },
+
+    async getClosedDay(date) {
+      return unwrapMaybe(await db.from("closed_days").select("date, created_at").eq("date", date).maybeSingle());
+    },
+    async earliestInstanceDate() {
+      const row = unwrapMaybe(
+        await db.from("block_instances").select("date").order("date").limit(1).maybeSingle()
+      );
+      return (row as { date: string } | null)?.date ?? null;
+    },
+
+    async getSummary(date) {
+      const row = unwrapMaybe(
+        await db.from("daily_summaries").select(SUMMARY_COLUMNS).eq("date", date).maybeSingle()
+      );
+      return row ? toSummary(row as unknown as DailySummary) : null;
+    },
+    async listSummariesFrom(date) {
+      const rows = unwrap(
+        await db.from("daily_summaries").select(SUMMARY_COLUMNS).gte("date", date).order("date")
+      ) as unknown as DailySummary[];
+      return rows.map(toSummary);
+    },
+    async latestSummary() {
+      const row = unwrapMaybe(
+        await db.from("daily_summaries").select(SUMMARY_COLUMNS).order("date", { ascending: false }).limit(1).maybeSingle()
+      );
+      return row ? toSummary(row as unknown as DailySummary) : null;
+    },
+    async listUnseenSummaries() {
+      const rows = unwrap(
+        await db.from("daily_summaries").select(SUMMARY_COLUMNS).is("seen_at", null).order("date")
+      ) as unknown as DailySummary[];
+      return rows.map(toSummary);
+    },
+    async markSummariesSeen(at) {
+      check(await db.from("daily_summaries").update({ seen_at: at }).is("seen_at", null));
+    },
+
     async listTemplates() {
       return unwrap(await db.from("loop_templates").select("id, name, created_at").order("created_at"));
     },

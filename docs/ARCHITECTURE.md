@@ -2,7 +2,7 @@
 
 The big picture of My Schedule Manager: what the pieces are, how data moves, and how it stays private.
 
-Status: **updated at the end of Phase 1.** Parts marked *planned* describe the design for later phases and don't exist yet.
+Status: **updated at the end of Phase 2.** Parts marked *planned* describe the design for later phases and don't exist yet.
 
 ## 1. System diagram
 
@@ -56,12 +56,6 @@ flowchart LR
 - **Called by:** every signed-in page.
 - **If it fails:** the page shows an error state with a retry button. Your data isn't affected.
 
-### Keep-alive cron (built, becomes Day Closeout)
-- **Does:** touches the database once a day, so Supabase Free doesn't pause the project.
-- **Owns:** nothing.
-- **Called by:** Vercel Cron at 16:00 UTC (00:00–00:59 Taipei).
-- **If it fails:** nothing is lost. Supabase warns by email before pausing, and a paused project can be restored.
-
 ### Schedule Loop (built)
 - **Does:** weekly templates, the actual blocks on real dates, check-offs, Rest Days and Shields.
 - **Owns:** `loop_templates`, `template_activations`, `template_blocks`, `block_instances`, `rest_days`.
@@ -74,23 +68,29 @@ flowchart LR
 - **Called by:** the Calendar page, which asks `/api/calendar` for the dates on screen.
 - **If it fails:** only the calendar shows an error. Its heavy code downloads only on this page.
 
-### Game Engine (planned, Phase 2)
-- **Does:** pure maths for XP, Power, levels and tiers.
-- **Owns:** no data itself. It calculates and hands results to the ledger (`game_ledger`, `game_state`).
-- **Called by:** check-offs and Day Closeout.
-- **If it fails:** nothing is written, so the ledger stays correct. `game_state` can always be rebuilt from the ledger.
+### Game Engine (built)
+- **Does:** pure maths for XP, Power, levels and tiers, in `engine.ts`. Every formula is written above its function, and your spec's worked examples are its tests.
+- **Owns:** `game_ledger` (every change ever) and `game_state` (a fast copy of the current totals).
+- **Called by:** check-offs, corrections and Day Closeout.
+- **If it fails:** nothing is written, because each change lands whole or not at all. XP and Power can always be rebuilt from the ledger, and a test proves they match.
 
-### Day Closeout, "The Reckoning" (planned, Phase 2)
-- **Does:** closes each finished day exactly once: unlogged blocks become skipped, then losses and streaks apply.
+### Day Closeout, "The Reckoning" (built)
+- **Does:** closes each finished day exactly once: unlogged blocks become skipped, then losses, streak and counters apply, and a summary is written.
 - **Owns:** `closed_days`, `daily_summaries`.
-- **Called by:** your first request of a new day, and the daily cron as backup.
-- **If it fails:** the next request or cron run tries again. `closed_days` stops any day from being counted twice.
+- **Called by:** your first request of a new day, and the daily cron as backup. The cron also keeps Supabase Free from pausing.
+- **If it fails:** the next request or cron run tries again. `closed_days` allows each date once, so no day can count twice.
 
-### Doom Clock and Focus (planned, Phase 2)
-- **Does:** countdown to midnight and the end of the current block, plus a focus timer.
+### Doom Clock and Focus (built)
+- **Does:** countdown to midnight and to the end of the current block, plus a full-screen focus timer that keeps the screen awake.
 - **Owns:** a focus-broken count on each block.
-- **Called by:** the status strip and full-screen view.
-- **If it fails:** only the visual stops. No XP or Power depends on it.
+- **Called by:** the status strip, which opens the full clock, and the Focus link on a block.
+- **If it fails:** only the visual stops. No XP or Power depends on it, and leaving focus mode has no penalty.
+
+### Avatar and effects (built, placeholder art)
+- **Does:** draws a figure per tier, with an aura, eyes, cracks and colour that follow your Power state, plus embers, fog and the level-up and tier-up cinematics.
+- **Owns:** nothing. It only reflects the game state. Your Motion setting is a cookie and a `settings` column.
+- **Called by:** the Home page, status strip and the signed-in layout.
+- **If it fails:** purely decorative. On phones it uses fewer particles, and it stops when motion is reduced or the tab is hidden.
 
 ### Dashboard (planned, Phase 3)
 - **Does:** Home's hero and widgets, with layouts saved separately for phone and desktop.
@@ -124,17 +124,18 @@ flowchart LR
 
 ## 3. Three traced flows
 
-In the first flow, steps 1–5 and 8 are real today. Everything marked *planned* will be corrected as those phases are built.
+The first two flows are real today. Anything marked *planned* will be corrected as that phase is built.
 
 ### "I mark my Study block as done"
 1. You tap **Done** on the phone.
 2. The request reaches the **proxy**, which checks your session and the allowlist.
 3. A **server action** checks your input with Zod and confirms you're the owner.
-4. The schedule rules check that the block exists, its day has arrived, and it isn't a rest block.
-5. It updates the block in `block_instances`. The database's RLS rules confirm the row is yours.
-6. *Planned, Phase 2:* the **game engine** works out the XP and Power from the formulas.
-7. *Planned, Phase 2:* a new row goes into `game_ledger`, and `game_state` is updated.
-8. The page refreshes and shows the new status. From Phase 2, the status strip shows your new XP and Power too.
+4. Any overdue closeout runs first, so you're never working from a day that should be closed.
+5. The rules check that the block exists, its day has arrived, and it isn't a rest block.
+6. The **game engine** works out what the block should be worth, using the streak at the start of the day.
+7. It compares that with what the ledger says the block has already earned, and only the difference is applied. That's why changing Done to Partial just adds a reversing row.
+8. One database call, `apply_game_commit`, updates the block, adds the ledger row and updates `game_state` together.
+9. The whole shell refreshes, and the status strip shows your new XP and Power.
 
 ### How blocks get onto your schedule
 1. You open the Loop or Calendar. The server finds the last day already generated.
@@ -143,13 +144,20 @@ In the first flow, steps 1–5 and 8 are real today. Everything marked *planned*
 4. Days already generated are never redone. That's why a block you add today can't appear on a past day, and why a block you edited stays edited.
 5. When you edit a template or switch to another, future blocks you haven't logged or edited are replaced. Anything you touched stays.
 
-### "Midnight closeout runs" (planned, Phase 2)
-1. Either your first request of the day notices that yesterday isn't closed, or Vercel Cron calls the endpoint with its secret header.
-2. For each unclosed past day, in date order, it claims the day in `closed_days`. If that day is already claimed, it stops, so running twice changes nothing.
-3. Unlogged blocks become **skipped**.
-4. The engine calculates losses, Power, streak and warnings, and writes them to `game_ledger`.
-5. It writes a `daily_summaries` row and an `audit_log` row.
-6. On your next open, the **Reckoning screen** shows the summary from that row.
+### "Midnight closeout runs"
+1. Either your first request of the day notices that yesterday isn't closed, or Vercel Cron calls `/api/cron/daily` with its secret header.
+2. Any days not generated yet are filled in, so a day you never opened still counts.
+3. For each unclosed past day, in date order, the engine works out the result. A planned block still running past midnight makes it wait.
+4. Unlogged blocks become **skipped**, and each skipped block costs XP and Power.
+5. The streak, Power-zero counter and tier-demotion counter update. Rest and Shield days, and days with nothing productive planned, leave all three unchanged.
+6. `apply_game_commit` writes everything as one unit: `closed_days`, the blocks, `game_ledger`, `game_state`, `daily_summaries` and `audit_log`. If that date is already closed, the whole thing is refused, so running twice changes nothing.
+7. On your next open, the **Reckoning screen** adds up every summary you haven't seen. Dismissing it marks them seen.
+
+### "I fix yesterday's block after closeout"
+1. You open yesterday in the Loop within 24 hours of its closeout, and change the block.
+2. The day is scored as it stood then, using that day's starting streak and tier. New `correction` rows go into the ledger, and nothing old is edited.
+3. That day's summary is recalculated, and the streak is replayed forward from it. XP earned on later days isn't changed.
+4. After 24 hours, the change is refused.
 
 ### "I ask the Oracle to move my gym session and approve it" (planned, Phase 4)
 1. You type the request. The server checks you're the owner and within the rate limit.
@@ -177,12 +185,12 @@ Each layer stops something different, so one failure doesn't expose everything. 
     - `X-Frame-Options` stops other sites embedding the app to trick your clicks.
     - `Referrer-Policy` limits what other sites learn about where you came from.
     - `Permissions-Policy` turns off device features the app doesn't use.
-11. **Audit log (table built, used from Phase 2).** An append-only record of AI actions, approvals, undos and closeouts. Even you can't edit or delete rows through the app, so the history can be trusted.
+11. **Audit log (built).** An append-only record of closeouts and corrections, with AI actions, approvals and undos joining in Phase 4. Even you can't edit or delete rows through the app, so the history can be trusted. The game ledger follows the same rule. Viewing it in Settings arrives with Phase 4.
 12. **No personal data in logs (built).** Error paths log nothing personal, because hosted logs are outside the protections above.
 13. **Backup (planned, Phase 7).** JSON and CSV export with JSON restore, so a mistake or lost account doesn't mean lost data.
 
 ### Preview mode
-`AUTH_PREVIEW=true` shows the app without a login, so it can be tested before accounts exist. Your data isn't involved: schedule screens use a temporary in-memory store that disappears when the server stops. It only works outside production builds, and a test proves a production build ignores it.
+`AUTH_PREVIEW=true` shows the app without a login, so it can be tested before accounts exist. Your data isn't involved: schedule and game screens use a temporary in-memory store that disappears when the server stops. A preview-only route, `/api/dev/preview-seed`, resets that store so tests can reach things that normally depend on a real midnight. Both only work outside production builds, and tests prove a production build ignores them.
 
 ## 5. Key design choices
 
@@ -192,3 +200,5 @@ Each layer stops something different, so one failure doesn't expose everything. 
 - **Schedule times are wall-clock times.** A block at 09:00 is stored as date plus 09:00, with no timezone. Changing timezone changes what "today" means, but never moves a block. The calendar runs in "UTC" mode purely so that it doesn't shift them, and it's told the current time in your timezone.
 - **Rules and storage are separate.** The schedule rules (`service.ts`, `logic.ts`) talk to storage through one interface (`repo.ts`), with a Supabase version and an in-memory version. This lets the rules be fully tested without a database.
 - **Generation is lazy.** Nothing runs in the background. Blocks are created when you open a schedule page, which suits a free plan with limited scheduled jobs.
+- **The ledger stores what really happened.** If a gain is capped because Power is already 100, the row records the amount that was actually applied. That's what lets the totals be rebuilt exactly by adding up the rows.
+- **Every game change is one transaction.** The server can't make several database calls safely in a row, because a crash midway would leave things half done. So one Postgres function, `apply_game_commit`, does it all. It also checks a version number, so two tabs can't overwrite each other's changes.

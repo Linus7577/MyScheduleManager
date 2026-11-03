@@ -1,9 +1,12 @@
 import { getTranslations } from "next-intl/server";
-import { INITIAL_GAME_STATE, POWER_MAX } from "@/config/game.config";
+import { ShieldAlert } from "lucide-react";
+import { POWER_MAX } from "@/config/game.config";
+import { Avatar } from "@/features/game/components/avatar";
+import { CompactClock } from "@/features/game/components/compact-clock";
+import type { GameView } from "@/features/game/service";
 import { cn } from "@/lib/utils";
-import { RuneMark } from "./rune-mark";
 
-function StatBar(props: { label: string; percent: number; barClass: string }) {
+function StatBar(props: { label: string; percent: number; barClass: string; text: string }) {
   return (
     <div className="flex items-center gap-2">
       <span className="w-10 shrink-0 text-xs text-muted-foreground">{props.label}</span>
@@ -12,19 +15,21 @@ function StatBar(props: { label: string; percent: number; barClass: string }) {
         aria-label={props.label}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={props.percent}
+        aria-valuenow={Math.round(props.percent)}
+        aria-valuetext={props.text}
         className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2"
       >
         <div className={cn("h-full rounded-full", props.barClass)} style={{ width: `${props.percent}%` }} />
       </div>
+      <span className="w-14 shrink-0 text-right text-xs text-muted-foreground tabular-nums">{props.text}</span>
     </div>
   );
 }
 
-/** Placeholder until Phase 2 connects the real game state and the Doom Clock. */
-export async function StatusStrip() {
+export async function StatusStrip({ game, timeZone }: { game: GameView; timeZone: string }) {
   const t = await getTranslations("status");
-  const { level, power, xpProgressPercent } = INITIAL_GAME_STATE;
+  const tiers = await getTranslations("tiers");
+  const power = Math.floor(game.power);
 
   return (
     <section
@@ -34,21 +39,27 @@ export async function StatusStrip() {
       <div
         role="img"
         aria-label={t("portrait")}
-        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-2"
+        className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2"
       >
-        <RuneMark className="size-8" />
+        <Avatar tier={game.tier} powerState={game.powerState} portrait className="size-10" />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1 md:max-w-md">
-        <p className="truncate text-xs font-medium">
-          <span className="font-heading">{t("tierName")}</span>
-          <span className="text-muted-foreground"> · {t("level", { level })}</span>
+        <p className="flex items-center gap-1 truncate text-xs font-medium">
+          <span className="truncate font-heading">{tiers(String(game.tier))}</span>
+          <span className="shrink-0 text-muted-foreground">· {t("level", { level: game.level })}</span>
+          {game.armorFailing && (
+            <ShieldAlert className="size-3.5 shrink-0 text-crimson-400" role="img" aria-label={t("armorFailing")} />
+          )}
         </p>
-        <StatBar label={t("xp")} percent={xpProgressPercent} barClass="bg-ember-500" />
-        <StatBar label={t("power")} percent={(power / POWER_MAX) * 100} barClass="bg-crimson-500" />
+        <StatBar
+          label={t("xp")}
+          percent={game.xpProgressPercent}
+          barClass="bg-ember-500"
+          text={game.totalXp.toLocaleString("en-US")}
+        />
+        <StatBar label={t("power")} percent={(game.power / POWER_MAX) * 100} barClass="bg-crimson-500" text={String(power)} />
       </div>
-      <p aria-label={t("doomClock")} className="ml-auto shrink-0 font-mono text-sm text-muted-foreground tabular-nums">
-        --:--:--
-      </p>
+      <CompactClock timeZone={timeZone} />
     </section>
   );
 }

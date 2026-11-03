@@ -3,14 +3,14 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import type { Locale } from "@/config/app.config";
+import type { Locale, MotionLevel } from "@/config/app.config";
 import { saveSettings } from "./actions";
 import type { SaveSettingsState } from "./schema";
 
 const fieldClass =
   "h-11 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none";
 
-export function SettingsForm(props: { locale: Locale; timezone: string; timezones: string[] }) {
+export function SettingsForm(props: { locale: Locale; timezone: string; timezones: string[]; motion: MotionLevel }) {
   const t = useTranslations("settings");
   const [state, action, pending] = useActionState<SaveSettingsState, FormData>(saveSettings, { status: "idle" });
 
@@ -38,6 +38,17 @@ export function SettingsForm(props: { locale: Locale; timezone: string; timezone
           ))}
         </select>
         <p className="text-xs text-muted-foreground">{t("timezoneHelp")}</p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="motion" className="text-sm font-medium">
+          {t("motion")}
+        </label>
+        <select id="motion" name="motion" defaultValue={props.motion} className={fieldClass}>
+          <option value="full">{t("motionFull")}</option>
+          <option value="reduced">{t("motionReduced")}</option>
+          <option value="off">{t("motionOff")}</option>
+        </select>
       </div>
 
       <div className="flex items-center gap-3">

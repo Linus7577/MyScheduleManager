@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { CalendarDays, MessageSquare, Pencil, TriangleAlert } from "lucide-react";
+import { CalendarDays, Hourglass, MessageSquare, Pencil, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -106,7 +106,7 @@ function EditDialog({ instance, onClose }: { instance: BlockInstance; onClose: (
   );
 }
 
-export function InstanceCard(props: { instance: BlockInstance; overlapping: boolean; isFuture: boolean }) {
+export function InstanceCard(props: { instance: BlockInstance; overlapping: boolean; isFuture: boolean; isToday: boolean }) {
   const { instance, overlapping, isFuture } = props;
   const t = useTranslations("loop");
   const categories = useTranslations("categories");
@@ -198,6 +198,20 @@ export function InstanceCard(props: { instance: BlockInstance; overlapping: bool
             <MessageSquare className="size-4" aria-hidden="true" />
             {t("note")}
           </Button>
+        )}
+        {canLog && props.isToday && (
+          <Link
+            href={`/focus/${instance.id}`}
+            className="flex h-10 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:bg-muted"
+          >
+            <Hourglass className="size-4" aria-hidden="true" />
+            {t("focus")}
+          </Link>
+        )}
+        {instance.focus_broken_count > 0 && (
+          <span className="px-1 text-xs text-muted-foreground">
+            {t("focusBroken", { count: instance.focus_broken_count })}
+          </span>
         )}
         {instance.event_id ? (
           <Link

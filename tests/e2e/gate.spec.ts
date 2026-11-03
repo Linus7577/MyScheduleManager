@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+﻿import { expect, test } from "@playwright/test";
 
 // Runs against a production build with AUTH_PREVIEW=true set, to prove production ignores that flag.
 test.describe("production gate", () => {
@@ -52,9 +52,15 @@ test.describe("production gate", () => {
   });
 
   test("the cron endpoint refuses callers without the secret", async ({ request }) => {
-    expect((await request.get("/api/cron/keepalive")).status()).toBe(401);
-    const wrong = await request.get("/api/cron/keepalive", { headers: { Authorization: "Bearer wrong" } });
+    expect((await request.get("/api/cron/daily")).status()).toBe(401);
+    const wrong = await request.get("/api/cron/daily", { headers: { Authorization: "Bearer wrong" } });
     expect(wrong.status()).toBe(401);
+  });
+
+  test("the preview-only seed route doesn't exist in production", async ({ request }) => {
+    const signedOut = await request.get("/api/dev/preview-seed?today=1", { maxRedirects: 0 });
+    expect(signedOut.status()).toBe(307);
+    expect(signedOut.headers().location).toContain("/login");
   });
 
   test("the PWA manifest and icons are reachable without login", async ({ request }) => {

@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { ChevronRight, Lock } from "lucide-react";
+import { ChevronRight, Lock, ScrollText } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { SETTINGS_NAV } from "@/components/shell/nav-items";
 import { Card, CardContent } from "@/components/ui/card";
 
 const SEALED_HALLS = [
-  { labelKey: "battleLog", phase: 2 },
   { labelKey: "goals", phase: 3 },
   { labelKey: "learning", phase: 3 },
   { labelKey: "habits", phase: 3 },
@@ -23,6 +22,15 @@ export default async function MorePage() {
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
       <p className="text-sm text-muted-foreground">{t("flavor")}</p>
+
+      <Link
+        href="/battle-log"
+        className="glow-card flex h-14 items-center gap-3 rounded-xl bg-card px-4 text-sm ring-1 ring-foreground/10"
+      >
+        <ScrollText className="size-5 text-crimson-400" aria-hidden="true" />
+        {t("battleLog")}
+        <ChevronRight className="ml-auto size-4 text-muted-foreground" aria-hidden="true" />
+      </Link>
 
       <Link
         href={SETTINGS_NAV.href}

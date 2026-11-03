@@ -70,7 +70,10 @@ export type ScheduleErrorCode =
   | "eventProductiveTimed"
   | "eventEndBeforeStart"
   | "eventLinked"
-  | "notCancellable";
+  | "notCancellable"
+  | "dayClosed"
+  | "correctionExpired"
+  | "correctionNeedsStatus";
 
 export type ActionResult = { ok: true } | { ok: false; code: ScheduleErrorCode };
 

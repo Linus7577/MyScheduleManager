@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
+﻿import { beforeEach, describe, expect, it } from "vitest";
 import { createMemoryRepo } from "@/features/schedule/memory-repo";
-import type { ScheduleRepo } from "@/features/schedule/repo";
+import type { AppRepo } from "@/features/schedule/generation";
 import * as service from "@/features/schedule/service";
 import type { BlockFields, BlockInstance, EventFields } from "@/features/schedule/types";
 
@@ -11,7 +11,7 @@ const SEEDS = ["Semester", "Exam Week", "Holiday"];
 
 const fields: BlockFields = { start_time: "09:00", end_time: "10:00", category: "study", title: "Study", notes: "" };
 
-let repo: ScheduleRepo;
+let repo: AppRepo;
 let ctx: service.ScheduleContext;
 let semesterId: string;
 

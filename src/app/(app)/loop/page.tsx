@@ -66,6 +66,7 @@ export default async function LoopPage({ searchParams }: { searchParams: Promise
               instance={instance}
               overlapping={day.overlaps.has(instance.id)}
               isFuture={date > ctx.today}
+              isToday={date === ctx.today}
             />
           ))}
         </ul>
