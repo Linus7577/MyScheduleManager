@@ -1,0 +1,97 @@
+{
+  "app": {
+    "name": "My Schedule Manager",
+    "description": "Your week is a loop. Hold the line, or watch your armor fail."
+  },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "loop": "Loop",
+    "calendar": "Calendar",
+    "oracle": "Oracle",
+    "more": "More",
+    "settings": "Settings"
+  },
+  "status": {
+    "label": "Character status",
+    "portrait": "Avatar portrait",
+    "tierName": "Hollow Squire",
+    "level": "Lv {level}",
+    "xp": "XP",
+    "power": "Power",
+    "doomClock": "Doom Clock, not yet awakened"
+  },
+  "home": {
+    "title": "The Keep",
+    "today": "Today",
+    "flavor": "The loop has not begun. The fire is lit, and the night is patient.",
+    "sealed": "The Loop awakens in Phase 1, the game in Phase 2."
+  },
+  "sealed": {
+    "note": "Sealed until Phase {phase}."
+  },
+  "loop": {
+    "title": "The Loop",
+    "flavor": "No blocks are carved yet. The stone waits."
+  },
+  "calendar": {
+    "title": "Calendar",
+    "flavor": "The days are unmarked. Nothing yet stands in your way."
+  },
+  "oracle": {
+    "title": "The Oracle",
+    "flavor": "The Oracle sleeps. Do not wake it before its hour."
+  },
+  "more": {
+    "title": "More",
+    "flavor": "Other halls lie behind these doors. Most remain barred.",
+    "locked": "Sealed until Phase {phase}",
+    "goals": "Goals and projects",
+    "learning": "Learning",
+    "habits": "Habits",
+    "finance": "The Treasury",
+    "vault": "The Vault",
+    "review": "Weekly review",
+    "battleLog": "Battle Log"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageEn": "English",
+    "languageZhTw": "繁體中文",
+    "timezone": "Timezone",
+    "timezoneHelp": "Every \"today\", and the midnight closeout, follows this timezone.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "So it is written.",
+    "savedPreview": "Language changed. Preview mode has no database, so the timezone was not kept.",
+    "invalid": "That choice is not recognized. Nothing was changed.",
+    "saveFailed": "The scribe failed. Nothing was saved. Try again.",
+    "account": "Account",
+    "signOut": "Sign out"
+  },
+  "login": {
+    "title": "Enter the Keep",
+    "subtitle": "Only one soul may pass this gate.",
+    "google": "Continue with Google",
+    "notConfigured": "The gate is not built yet. Finish docs/SETUP.md to enable sign-in.",
+    "error": "Sign-in failed. The gate did not open. Try again."
+  },
+  "accessDenied": {
+    "title": "Access denied",
+    "body": "This account may not enter. You have been signed out.",
+    "back": "Back to sign-in"
+  },
+  "preview": {
+    "banner": "Preview mode: sign-in is off on this development server."
+  },
+  "states": {
+    "loading": "Loading…",
+    "errorTitle": "Something broke in the dark",
+    "errorBody": "This page failed to load. Your data is safe.",
+    "retry": "Try again",
+    "notFoundTitle": "Nothing stands here",
+    "notFoundBody": "This path leads nowhere.",
+    "backHome": "Return to the Keep"
+  }
+}

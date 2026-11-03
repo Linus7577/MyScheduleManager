@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* "Final Boss" palette (SPEC section 6). Gold is reserved for level-up, tier-up and "all blocks done". */
+@theme {
+  --color-bg: #0a0a0c;
+  --color-surface-1: #121216;
+  --color-surface-2: #1a1a20;
+
+  --color-crimson: #dc143c;
+  --color-crimson-50: #fff1f3;
+  --color-crimson-100: #ffe0e5;
+  --color-crimson-200: #ffc6d0;
+  --color-crimson-300: #ff9dae;
+  --color-crimson-400: #ff6482;
+  --color-crimson-500: #dc143c;
+  --color-crimson-600: #b80f31;
+  --color-crimson-700: #960d29;
+  --color-crimson-800: #7a0f26;
+  --color-crimson-900: #5f0f20;
+  --color-crimson-950: #33040e;
+
+  --color-ember: #ff6a2b;
+  --color-ember-50: #fff5ed;
+  --color-ember-100: #ffe8d4;
+  --color-ember-200: #ffcda8;
+  --color-ember-300: #ffab71;
+  --color-ember-400: #ff8a4a;
+  --color-ember-500: #ff6a2b;
+  --color-ember-600: #e64f13;
+  --color-ember-700: #bf3b0d;
+  --color-ember-800: #972f12;
+  --color-ember-900: #7a2912;
+  --color-ember-950: #421207;
+
+  --color-bone: #e8e4dc;
+  --color-bone-50: #faf9f6;
+  --color-bone-100: #f3f1ec;
+  --color-bone-200: #e8e4dc;
+  --color-bone-300: #d6d0c4;
+  --color-bone-400: #bdb5a6;
+  --color-bone-500: #a39a89;
+  --color-bone-600: #8a8170;
+  --color-bone-700: #6f675a;
+  --color-bone-800: #57514a;
+  --color-bone-900: #3f3b35;
+  --color-bone-950: #24211e;
+
+  --color-ash: #8a8580;
+  --color-ash-50: #f5f4f3;
+  --color-ash-100: #e6e4e2;
+  --color-ash-200: #cecac7;
+  --color-ash-300: #b3aeaa;
+  --color-ash-400: #9d9894;
+  --color-ash-500: #8a8580;
+  --color-ash-600: #6f6b67;
+  --color-ash-700: #585552;
+  --color-ash-800: #403e3c;
+  --color-ash-900: #2b2a28;
+  --color-ash-950: #181716;
+
+  --color-gold: #d4af37;
+  --color-gold-50: #fbf8eb;
+  --color-gold-100: #f6eecb;
+  --color-gold-200: #eedd9a;
+  --color-gold-300: #e5c964;
+  --color-gold-400: #dcba45;
+  --color-gold-500: #d4af37;
+  --color-gold-600: #b08d26;
+  --color-gold-700: #8a6c1e;
+  --color-gold-800: #6b5420;
+  --color-gold-900: #56431e;
+  --color-gold-950: #30240e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-cinzel), "Noto Serif TC", ui-serif, Georgia, serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* The app is dark only, so shadcn's variables map straight onto the palette. */
+:root {
+  --background: #0a0a0c;
+  --foreground: #e8e4dc;
+  --card: #121216;
+  --card-foreground: #e8e4dc;
+  --popover: #1a1a20;
+  --popover-foreground: #e8e4dc;
+  --primary: #dc143c;
+  --primary-foreground: #ffffff;
+  --secondary: #1a1a20;
+  --secondary-foreground: #e8e4dc;
+  --muted: #1a1a20;
+  --muted-foreground: #9d9894;
+  --accent: #1a1a20;
+  --accent-foreground: #e8e4dc;
+  --destructive: #ff6482;
+  --border: rgb(232 228 220 / 12%);
+  --input: rgb(232 228 220 / 18%);
+  --ring: #dc143c;
+  --radius: 0.625rem;
+  --sidebar: #121216;
+  --sidebar-foreground: #e8e4dc;
+  --sidebar-primary: #dc143c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a1a20;
+  --sidebar-accent-foreground: #e8e4dc;
+  --sidebar-border: rgb(232 228 220 / 12%);
+  --sidebar-ring: #dc143c;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+    color-scheme: dark;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+  }
+}
+
+@utility glow-card {
+  transition: box-shadow 200ms ease;
+  &:hover,
+  &:active {
+    box-shadow: 0 0 0 1px rgb(220 20 60 / 55%), 0 0 22px rgb(220 20 60 / 28%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

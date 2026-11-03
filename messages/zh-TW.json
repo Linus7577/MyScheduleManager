@@ -1,0 +1,97 @@
+{
+  "app": {
+    "name": "My Schedule Manager",
+    "description": "你的一週是一道循環。守住防線，否則眼看鎧甲崩解。"
+  },
+  "nav": {
+    "label": "主要導覽",
+    "home": "首頁",
+    "loop": "循環",
+    "calendar": "行事曆",
+    "oracle": "神諭",
+    "more": "更多",
+    "settings": "設定"
+  },
+  "status": {
+    "label": "角色狀態",
+    "portrait": "角色頭像",
+    "tierName": "空洞侍從",
+    "level": "等級 {level}",
+    "xp": "經驗",
+    "power": "力量",
+    "doomClock": "末日之鐘，尚未甦醒"
+  },
+  "home": {
+    "title": "要塞",
+    "today": "今天",
+    "flavor": "循環尚未開始。爐火已燃，長夜正耐心等待。",
+    "sealed": "循環將於第 1 階段甦醒，遊戲則於第 2 階段。"
+  },
+  "sealed": {
+    "note": "封印至第 {phase} 階段。"
+  },
+  "loop": {
+    "title": "循環",
+    "flavor": "尚未刻下任何時段。石碑靜候。"
+  },
+  "calendar": {
+    "title": "行事曆",
+    "flavor": "時日未有標記。此刻沒有任何阻礙。"
+  },
+  "oracle": {
+    "title": "神諭",
+    "flavor": "神諭沉睡中。時辰未到，切勿喚醒。"
+  },
+  "more": {
+    "title": "更多",
+    "flavor": "門後還有其他殿堂，多數仍被封閉。",
+    "locked": "封印至第 {phase} 階段",
+    "goals": "目標與專案",
+    "learning": "學習",
+    "habits": "習慣",
+    "finance": "寶庫",
+    "vault": "秘庫",
+    "review": "每週回顧",
+    "battleLog": "戰鬥紀錄"
+  },
+  "settings": {
+    "title": "設定",
+    "language": "語言",
+    "languageEn": "English",
+    "languageZhTw": "繁體中文",
+    "timezone": "時區",
+    "timezoneHelp": "所有「今天」的判定與午夜結算，都依照此時區。",
+    "save": "儲存",
+    "saving": "儲存中…",
+    "saved": "已記錄在案。",
+    "savedPreview": "語言已變更。預覽模式沒有資料庫，因此時區不會保留。",
+    "invalid": "無法辨識此選項，未做任何變更。",
+    "saveFailed": "書記失手，未能儲存。請再試一次。",
+    "account": "帳號",
+    "signOut": "登出"
+  },
+  "login": {
+    "title": "進入要塞",
+    "subtitle": "此門僅容一人通過。",
+    "google": "使用 Google 繼續",
+    "notConfigured": "城門尚未建成。請完成 docs/SETUP.md 以啟用登入。",
+    "error": "登入失敗，城門未開。請再試一次。"
+  },
+  "accessDenied": {
+    "title": "拒絕存取",
+    "body": "此帳號不得進入，你已被登出。",
+    "back": "返回登入頁"
+  },
+  "preview": {
+    "banner": "預覽模式：此開發伺服器已關閉登入驗證。"
+  },
+  "states": {
+    "loading": "載入中…",
+    "errorTitle": "黑暗中出了差錯",
+    "errorBody": "此頁面載入失敗。你的資料安然無恙。",
+    "retry": "再試一次",
+    "notFoundTitle": "此處空無一物",
+    "notFoundBody": "這條路不通往任何地方。",
+    "backHome": "返回要塞"
+  }
+}
