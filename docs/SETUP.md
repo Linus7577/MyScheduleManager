@@ -26,7 +26,7 @@ Open http://localhost:3000. Remove that line once step 5 is done.
 ## 2. Put the code on GitHub
 **Why:** Vercel deploys from GitHub, so every push updates the live app.
 
-1. On github.com, create a new **private** repository. Leave it empty, with no README.
+1. On github.com, create a new repository with no README. This project's repo is public, so its code, this documentation and the commit author's email can be read by anyone. Choose private if you don't want that; Vercel can deploy either. Secrets are never in the repo, because Git ignores `.env.local`.
 2. Copy its URL into the first command below, then run both:
 
 ```bash
