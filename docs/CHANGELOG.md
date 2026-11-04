@@ -1,5 +1,14 @@
 # Changelog
 
+## Game look, first release (before Phase 7)
+
+- **Home is now a full-screen game lobby:** a blood moon over a gothic citadel, with a dragon behind and the warrior in front. The dragon breathes and beats its wings, and lightning strikes now and then.
+- **The warrior:** original art for Tiers 1, 2, 3, 4 and 6, with a rising dark aura. Tap him for a new line, in the app's language.
+- **Sound:** thunder, wind and game sounds, with a mute button on Home.
+- **Key moments:** marking a block done or skipped brings a sound and a line from him.
+- **Each section is its own place:** with its own name, accent color and recolored painting.
+- **Not done yet:** Tiers 5, 7 and 8 borrow nearby art. Tiers 1 and 2 still need redrawing with a helmet or mask. Each section's own painting and layout are still to come. Canva's AI allowance ran out, and it resets on the 1st of each month. His Japanese voice isn't in yet, so the lines are text only.
+
 ## What changed in Phase 6: The Vault
 
 - **Items:** links, notes in markdown, and references to files that live elsewhere. Nothing is uploaded.

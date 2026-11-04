@@ -32,6 +32,8 @@ Short definitions of terms you'll meet in this project.
 | **JWT** | A signed token proving who you are, stored in your session cookie. Its "claims" include your email. |
 | **ledger** | A list of changes that's only ever added to. Current XP is the sum of the list, like a bank statement. |
 | **lazy (generation or closeout)** | Doing work only when it's first needed, rather than on a schedule. |
+| **living painting** | A still picture brought to life by code, with slow movement and glow, so it stays small and smooth on a phone. |
+| **lobby** | The full-screen first page of a game. Here, the Home screen with the citadel, dragon and warrior. |
 | **manifest** | A small file describing the app to the phone: its name, icon and colours. It makes the app installable. |
 | **markdown** | A simple way to format plain text: `# heading`, `**bold**`, `- list`. Vault notes are written in it. |
 | **market value** | What a holding would be worth at the current price: shares times price. |
@@ -42,6 +44,7 @@ Short definitions of terms you'll meet in this project.
 | **proxy** | Next.js code that runs before every page. Our gate. Older versions called it middleware. |
 | **publishable key** | The Supabase key that's safe in the browser (`sb_publishable_...`). It can only do what RLS allows. |
 | **PWA** | Progressive Web App: a website you can install on your phone like an app. |
+| **place** | A section's location in the game world, such as the Dragon's Hoard for the Treasury. It sets that section's look. |
 | **pinned** | Marked to stay at the top of the Vault list. |
 | **rate limiting** | Capping how often something can be called, to protect a free quota. |
 | **realized profit/loss (P/L)** | Profit or loss locked in by selling. Compare unrealized profit/loss. |

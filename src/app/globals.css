@@ -288,3 +288,425 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* The Home lobby. Everything here moves with transforms and opacity only, so it stays smooth on a phone. */
+.lobby-plate {
+  background: linear-gradient(180deg, rgb(10 6 8 / 82%), rgb(10 6 8 / 92%));
+  box-shadow: inset 0 0 0 1px rgb(220 20 60 / 45%);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.lobby-button {
+  min-height: 3rem;
+  background: linear-gradient(180deg, var(--color-crimson-500), var(--color-crimson-800));
+  box-shadow: inset 0 0 0 1px rgb(255 160 170 / 45%), 0 0 22px rgb(220 20 60 / 45%);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.lobby-moon {
+  top: -2%;
+  left: 50%;
+  width: min(120%, 900px);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgb(255 70 40 / 30%), rgb(220 20 60 / 12%) 60%, transparent);
+  opacity: 0.7;
+}
+
+.lobby-bolts,
+.lobby-flash {
+  opacity: 0;
+  transition: opacity 500ms ease-out;
+}
+
+.lobby-flash {
+  background: radial-gradient(90% 55% at 50% 15%, rgb(255 170 120 / 26%), rgb(220 20 60 / 8%) 60%, transparent);
+}
+
+.lobby[data-flash="true"] .lobby-bolts,
+.lobby[data-flash="true"] .lobby-flash {
+  opacity: 1;
+  transition-duration: 60ms;
+}
+
+.lobby-foot-fog {
+  pointer-events: none;
+  background: linear-gradient(0deg, rgb(4 2 3 / 92%) 8%, rgb(4 2 3 / 45%) 38%, transparent);
+}
+
+.lobby-warrior {
+  cursor: pointer;
+  transition: filter 300ms ease;
+}
+
+.lobby-warrior-speaking {
+  filter: brightness(1.18);
+}
+
+/* The dragon's three layers. Wings sit under the body, and overlap it a little so no gap opens as they move. */
+.dragon-wing-left {
+  clip-path: polygon(0 0, 31% 0, 31% 32%, 24% 37%, 16% 38%, 16% 53%, 21% 60%, 21% 100%, 0 100%);
+  transform-origin: 30% 34%;
+}
+
+.dragon-wing-right {
+  clip-path: polygon(69% 0, 100% 0, 100% 100%, 82% 100%, 82% 62%, 77% 54%, 76% 38%, 69% 33%);
+  transform-origin: 70% 34%;
+}
+
+.dragon-body {
+  clip-path: polygon(29% 0, 71% 0, 71% 33%, 78% 38%, 79% 40%, 80% 54%, 85% 62%, 85% 100%, 18% 100%, 18% 60%, 14% 52%, 13% 39%, 22% 38%, 29% 30%);
+}
+
+.dragon-eye {
+  top: 5%;
+  left: 44%;
+  width: 3%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #ffd0b0, #ff6a2b 45%, transparent);
+}
+
+.dragon-veins {
+  top: 28%;
+  left: 28%;
+  width: 34%;
+  aspect-ratio: 1;
+  background: radial-gradient(closest-side, rgb(255 60 40 / 34%), transparent);
+  opacity: 0.5;
+}
+
+/* The mysterious aura. Soft gradients, not blurs, because a live blur is what makes phones stutter. */
+.warrior-aura {
+  pointer-events: none;
+  background: radial-gradient(44% 46% at 50% 42%, rgb(220 20 60 / 34%), rgb(40 4 12 / 30%) 60%, transparent);
+}
+
+.warrior-wisp {
+  position: absolute;
+  bottom: 8%;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(6 2 8 / 80%), rgb(40 6 18 / 35%) 55%, transparent);
+  opacity: 0.55;
+}
+
+.warrior-wisp-1 {
+  left: 6%;
+}
+
+.warrior-wisp-2 {
+  right: 4%;
+  bottom: 22%;
+}
+
+.warrior-wisp-3 {
+  left: 28%;
+  bottom: 0;
+}
+
+.warrior-eye {
+  width: 1.5%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 210 190 / 85%), rgb(255 40 40 / 45%) 55%, transparent);
+}
+
+@keyframes moon-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes dragon-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-0.7%) scale(1.012);
+  }
+}
+
+@keyframes wing-left {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(2.2deg);
+  }
+}
+
+@keyframes wing-right {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-2.2deg);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes warrior-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.012);
+  }
+}
+
+@keyframes wisp-rise {
+  0% {
+    transform: translateY(12%) scale(0.85);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-46%) scale(1.25);
+    opacity: 0;
+  }
+}
+
+[data-motion="full"] .lobby-moon {
+  animation: moon-pulse 9s ease-in-out infinite;
+}
+
+[data-motion="full"] .dragon-breathe {
+  animation: dragon-breathe 7s ease-in-out infinite;
+  transform-origin: 50% 80%;
+}
+
+[data-motion="full"] .dragon-wing-left {
+  animation: wing-left 7s ease-in-out infinite;
+}
+
+[data-motion="full"] .dragon-wing-right {
+  animation: wing-right 7s ease-in-out infinite;
+}
+
+[data-motion="full"] .dragon-eye,
+[data-motion="full"] .dragon-veins {
+  animation: glow-pulse 7s ease-in-out infinite;
+}
+
+[data-motion="full"] .warrior-breathe {
+  animation: warrior-breathe 4.5s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+[data-motion="full"] .warrior-eye {
+  animation: glow-pulse 4.5s ease-in-out infinite;
+}
+
+[data-motion="full"] .warrior-wisp-1 {
+  animation: wisp-rise 8s ease-out infinite;
+}
+
+[data-motion="full"] .warrior-wisp-2 {
+  animation: wisp-rise 10s ease-out -3s infinite;
+}
+
+[data-motion="full"] .warrior-wisp-3 {
+  animation: wisp-rise 12s ease-out -6s infinite;
+}
+
+/* Each section is its own place. Drawn by code until its painting exists. Panels stay dark, so text stays readable. */
+.place-backdrop {
+  --place-glow: rgb(220 20 60 / 22%);
+  background-color: var(--color-bg);
+  background-image: radial-gradient(120% 60% at 50% 0%, var(--place-glow), transparent 70%);
+}
+
+.place-name {
+  color: var(--place-accent, var(--color-crimson-300));
+}
+
+.place-name[data-place="warTable"] { --place-accent: #ff9dae; }
+.place-name[data-place="observatory"] { --place-accent: #a9b8ff; }
+.place-name[data-place="sanctum"] { --place-accent: #7fe0cf; }
+.place-name[data-place="hoard"] { --place-accent: #e6c35c; }
+.place-name[data-place="archive"] { --place-accent: #d6b48a; }
+.place-name[data-place="campaign"] { --place-accent: #ff8a4a; }
+.place-name[data-place="tower"] { --place-accent: #c6a6ff; }
+.place-name[data-place="grounds"] { --place-accent: #ffab71; }
+.place-name[data-place="records"] { --place-accent: #bdb5a6; }
+.place-name[data-place="clocktower"] { --place-accent: #ff6482; }
+.place-name[data-place="gate"] { --place-accent: #d6d0c4; }
+.place-name[data-place="armory"] { --place-accent: #b3aeaa; }
+
+/* War map: a battle grid and marching lines. */
+.place-backdrop[data-place="warTable"] {
+  background-image:
+    radial-gradient(90% 50% at 50% 0%, rgb(220 20 60 / 26%), transparent 70%),
+    linear-gradient(rgb(255 100 130 / 5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 100 130 / 5%) 1px, transparent 1px);
+  background-size: auto, 44px 44px, 44px 44px;
+}
+
+/* A night sky, with its own small stars. */
+.place-backdrop[data-place="observatory"] {
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #dfe4ff, transparent),
+    radial-gradient(1px 1px at 28% 42%, #dfe4ff, transparent),
+    radial-gradient(1.5px 1.5px at 44% 12%, #ffd9e0, transparent),
+    radial-gradient(1px 1px at 62% 30%, #dfe4ff, transparent),
+    radial-gradient(1.5px 1.5px at 78% 16%, #dfe4ff, transparent),
+    radial-gradient(1px 1px at 88% 48%, #ffd9e0, transparent),
+    radial-gradient(1px 1px at 18% 70%, #dfe4ff, transparent),
+    radial-gradient(1.5px 1.5px at 70% 78%, #dfe4ff, transparent),
+    radial-gradient(70% 40% at 70% 0%, rgb(90 80 200 / 26%), transparent),
+    radial-gradient(60% 40% at 10% 100%, rgb(220 20 60 / 14%), transparent);
+}
+
+/* Seer's smoke, in the cold teal of the dragon's lair. */
+.place-backdrop[data-place="sanctum"] {
+  background-image:
+    radial-gradient(70% 45% at 50% 8%, rgb(30 170 150 / 22%), transparent 70%),
+    radial-gradient(50% 35% at 15% 60%, rgb(100 20 60 / 22%), transparent),
+    radial-gradient(50% 35% at 85% 80%, rgb(20 90 100 / 20%), transparent);
+}
+
+/* Gold heaped in the dark. */
+.place-backdrop[data-place="hoard"] {
+  background-image:
+    radial-gradient(90% 40% at 50% 104%, rgb(212 175 55 / 30%), transparent 70%),
+    radial-gradient(40% 25% at 18% 100%, rgb(230 150 40 / 20%), transparent),
+    radial-gradient(40% 25% at 84% 100%, rgb(230 150 40 / 20%), transparent),
+    radial-gradient(70% 30% at 50% 0%, rgb(120 20 20 / 20%), transparent);
+}
+
+/* Shelves running up into the dark. */
+.place-backdrop[data-place="archive"] {
+  background-image:
+    radial-gradient(60% 40% at 50% 0%, rgb(190 120 50 / 18%), transparent 70%),
+    repeating-linear-gradient(0deg, rgb(214 180 138 / 7%) 0 2px, transparent 2px 84px),
+    repeating-linear-gradient(90deg, rgb(214 180 138 / 3%) 0 1px, transparent 1px 16px);
+}
+
+/* Banners hung from the rafters. */
+.place-backdrop[data-place="campaign"] {
+  background-image:
+    radial-gradient(70% 40% at 50% 0%, rgb(255 106 43 / 20%), transparent 70%),
+    linear-gradient(180deg, rgb(150 30 20 / 26%), transparent 34%);
+  background-size: auto, 130px 100%;
+}
+
+/* Spell circles. */
+.place-backdrop[data-place="tower"] {
+  background-image:
+    radial-gradient(circle at 50% 22%, transparent 118px, rgb(198 166 255 / 14%) 119px, transparent 121px),
+    radial-gradient(circle at 50% 22%, transparent 196px, rgb(198 166 255 / 9%) 197px, transparent 199px),
+    radial-gradient(70% 40% at 50% 0%, rgb(120 70 220 / 22%), transparent 70%);
+}
+
+/* Torchlight on stone. */
+.place-backdrop[data-place="grounds"] {
+  background-image:
+    radial-gradient(30% 24% at 8% 12%, rgb(255 140 60 / 26%), transparent),
+    radial-gradient(30% 24% at 92% 12%, rgb(255 140 60 / 26%), transparent),
+    linear-gradient(0deg, rgb(120 60 30 / 16%), transparent 40%);
+}
+
+/* Carved stone. */
+.place-backdrop[data-place="records"] {
+  background-image:
+    radial-gradient(70% 36% at 50% 0%, rgb(189 181 166 / 12%), transparent 70%),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 3%) 0 1px, transparent 1px 58px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 2%) 0 1px, transparent 1px 118px);
+}
+
+/* A black sun with a burning rim. */
+.place-backdrop[data-place="clocktower"] {
+  background-image:
+    radial-gradient(circle at 50% 18%, #050305 96px, rgb(255 70 90 / 55%) 100px, rgb(220 20 60 / 18%) 130px, transparent 230px);
+}
+
+/* A great arch of pale stone. */
+.place-backdrop[data-place="gate"] {
+  background-image:
+    radial-gradient(70% 70% at 50% 0%, rgb(214 208 196 / 12%), transparent 70%),
+    radial-gradient(46% 70% at 50% 100%, rgb(220 20 60 / 14%), transparent 70%);
+}
+
+/* The sheen of steel. */
+.place-backdrop[data-place="armory"] {
+  background-image:
+    repeating-linear-gradient(115deg, rgb(255 255 255 / 2%) 0 2px, transparent 2px 22px),
+    radial-gradient(70% 40% at 50% 0%, rgb(179 174 170 / 12%), transparent 70%);
+}
+
+/* Until each place has its own painting, it borrows the citadel, recolored to its own light. */
+.place-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/art/home/citadel.webp") center top / cover no-repeat;
+  opacity: 0.5;
+  filter: var(--place-tint, none);
+}
+
+/* A veil over the painting, so the panels above it stay easy to read. */
+.place-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(10 10 12 / 18%), rgb(10 10 12 / 74%) 58%, rgb(10 10 12 / 94%));
+}
+
+.place-backdrop[data-place="warTable"] { --place-tint: saturate(0.9) brightness(0.9); }
+.place-backdrop[data-place="observatory"] { --place-tint: hue-rotate(235deg) saturate(0.8); }
+.place-backdrop[data-place="sanctum"] { --place-tint: hue-rotate(170deg) saturate(0.8); }
+.place-backdrop[data-place="hoard"] { --place-tint: hue-rotate(42deg) saturate(1.1) brightness(1.05); }
+.place-backdrop[data-place="archive"] { --place-tint: hue-rotate(28deg) saturate(0.55); }
+.place-backdrop[data-place="campaign"] { --place-tint: hue-rotate(14deg) saturate(1.1); }
+.place-backdrop[data-place="tower"] { --place-tint: hue-rotate(275deg) saturate(0.9); }
+.place-backdrop[data-place="grounds"] { --place-tint: hue-rotate(22deg) saturate(0.85); }
+.place-backdrop[data-place="records"] { --place-tint: saturate(0.12) brightness(1.1); }
+.place-backdrop[data-place="clocktower"] { --place-tint: saturate(1.2) brightness(0.8); }
+.place-backdrop[data-place="gate"] { --place-tint: saturate(0.35); }
+.place-backdrop[data-place="armory"] { --place-tint: saturate(0.2) brightness(0.9); }
+
+/* The place's accent reaches its title and panels. */
+main:has(.place-name[data-place="warTable"]) { --place-accent: #ff9dae; }
+main:has(.place-name[data-place="observatory"]) { --place-accent: #a9b8ff; }
+main:has(.place-name[data-place="sanctum"]) { --place-accent: #7fe0cf; }
+main:has(.place-name[data-place="hoard"]) { --place-accent: #e6c35c; }
+main:has(.place-name[data-place="archive"]) { --place-accent: #d6b48a; }
+main:has(.place-name[data-place="campaign"]) { --place-accent: #ff8a4a; }
+main:has(.place-name[data-place="tower"]) { --place-accent: #c6a6ff; }
+main:has(.place-name[data-place="grounds"]) { --place-accent: #ffab71; }
+main:has(.place-name[data-place="records"]) { --place-accent: #bdb5a6; }
+main:has(.place-name[data-place="clocktower"]) { --place-accent: #ff6482; }
+main:has(.place-name[data-place="gate"]) { --place-accent: #d6d0c4; }
+main:has(.place-name[data-place="armory"]) { --place-accent: #b3aeaa; }
+
+main:has(.place-name) h1 {
+  text-shadow: 0 0 22px color-mix(in srgb, var(--place-accent) 45%, transparent);
+}
+
+main:has(.place-name) .bg-card {
+  background-color: rgb(16 15 19 / 90%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--place-accent) 55%, transparent);
+}

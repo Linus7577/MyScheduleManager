@@ -1,7 +1,4 @@
-import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { Flame, ShieldAlert } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
 import { Dashboard } from "@/features/command/components/dashboard";
 import { TodayTimeline } from "@/features/command/components/today-timeline";
 import {
@@ -16,17 +13,13 @@ import { getDashboardLayouts } from "@/features/command/service";
 import { BudgetBanner } from "@/features/finance/components/budget-alerts";
 import { PortfolioWidget, SpendingWidget } from "@/features/finance/components/widgets";
 import { ensureFinanceReady, getSpendingSummary } from "@/features/finance/service";
-import { Avatar } from "@/features/game/components/avatar";
-import { ParticleCanvas } from "@/features/game/components/particle-canvas";
+import { HomeLobby } from "@/features/game/components/lobby";
+import { moodFor, nextBlock } from "@/features/game/lines";
 import { SuggestionWidget } from "@/features/oracle/components/suggestion-widget";
 import { getGameView } from "@/features/game/service";
 import { getScheduleContext } from "@/features/schedule/context";
 import { ensureLoopReady } from "@/features/schedule/service";
 import { getMotionLevel } from "@/features/settings/queries";
-import { cn } from "@/lib/utils";
-
-const POWER_INTENSITY = { empowered: 1, steady: 0.7, wounded: 0.35, broken: 0.15 } as const;
-const EMBER = "#ff6a2b";
 
 export default async function HomePage() {
   const t = await getTranslations("home");
@@ -49,49 +42,39 @@ export default async function HomePage() {
     getSpendingSummary(ctx),
   ]);
   const blocks = instances.filter((block) => !block.is_cancelled);
+  const next = nextBlock(blocks, (ctx.wallClock ?? "").slice(11, 16));
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <h1 className="sr-only">{t("title")}</h1>
 
-      <section className="relative isolate overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-        <div aria-hidden="true" className="fog-layer absolute inset-y-0 -inset-x-[10%] -z-10" />
-        <ParticleCanvas
-          mode="drift"
-          color={EMBER}
-          motion={motion}
-          intensity={POWER_INTENSITY[game.powerState]}
-          className="pointer-events-none absolute inset-0 -z-10 size-full"
-        />
-        <div className="flex flex-col items-center gap-3 px-4 py-6 text-center">
-          <Avatar tier={game.tier} powerState={game.powerState} className="h-64 w-auto" />
-          <div>
-            <p className="font-heading text-2xl font-semibold">{tiers(String(game.tier))}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("levelLine", { level: game.level, state: powerStates(game.powerState) })}
-            </p>
-          </div>
-          <p className="flex items-center gap-1.5 text-sm">
-            <Flame className="size-4 text-ember-400" aria-hidden="true" />
-            {t("streak", { count: game.streakDays })}
-          </p>
-          {game.armorFailing && (
-            <p role="alert" className="flex items-center gap-1.5 text-sm text-crimson-400">
-              <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
-              {t("armorFailing")}
-            </p>
-          )}
-          <p className="text-sm text-muted-foreground">
-            {t("today")}:{" "}
-            <time dateTime={ctx.today} className="text-foreground">
-              {format.dateTime(new Date(`${ctx.today}T00:00:00Z`), { dateStyle: "full", timeZone: "UTC" })}
-            </time>
-          </p>
-          <TodayTimeline blocks={blocks} />
-          <Link href="/loop" className={cn(buttonVariants(), "h-11 px-4")}>
-            {t("openLoop")}
-          </Link>
-        </div>
+      <HomeLobby
+        tier={game.tier}
+        tierName={tiers(String(game.tier))}
+        levelLine={t("levelLine", { level: game.level, state: powerStates(game.powerState) })}
+        streakDays={game.streakDays}
+        powerState={game.powerState}
+        armorFailing={game.armorFailing}
+        mood={moodFor({
+          powerState: game.powerState,
+          streakDays: game.streakDays,
+          blocksToday: blocks.length,
+          blocksLeft: blocks.filter((block) => block.status === "planned").length,
+        })}
+        today={ctx.today}
+        next={next && { title: next.title, start_time: next.start_time, end_time: next.end_time }}
+        motion={motion}
+      />
+
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+      <section className="flex flex-col items-center gap-2 rounded-xl bg-card p-4 text-center ring-1 ring-foreground/10">
+        <p className="text-sm text-muted-foreground">
+          {t("today")}:{" "}
+          <time dateTime={ctx.today} className="text-foreground">
+            {format.dateTime(new Date(`${ctx.today}T00:00:00Z`), { dateStyle: "full", timeZone: "UTC" })}
+          </time>
+        </p>
+        <TodayTimeline blocks={blocks} />
       </section>
 
       <BudgetBanner alerts={spending.alerts} categories={spending.categories} />
@@ -121,6 +104,7 @@ export default async function HomePage() {
           weekly: <WeeklyWidget ctx={ctx} />,
         }}
       />
+      </div>
     </div>
   );
 }

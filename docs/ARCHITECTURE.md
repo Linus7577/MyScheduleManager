@@ -86,11 +86,23 @@ flowchart LR
 - **Called by:** the status strip, which opens the full clock, and the Focus link on a block.
 - **If it fails:** only the visual stops. No XP or Power depends on it, and leaving focus mode has no penalty.
 
-### Avatar and effects (built, placeholder art)
-- **Does:** draws a figure per tier, with an aura, eyes, cracks and colour that follow your Power state, plus embers, fog and the level-up and tier-up cinematics.
-- **Owns:** nothing. It only reflects the game state. Your Motion setting is a cookie and a `settings` column.
-- **Called by:** the Home page, status strip and the signed-in layout.
-- **If it fails:** purely decorative. On phones it uses fewer particles, and it stops when motion is reduced or the tab is hidden.
+### Home lobby and warrior (built, art partly finished)
+- **Does:** shows the full-screen citadel, the living-painting dragon and the warrior for your tier. His aura, eyes, cracks and color follow your Power state. Lightning, fog, embers and his lines add to it, along with the level-up and tier-up cinematics.
+- **Owns:** nothing in the database. It only reflects the game state. Art is in `public/art`, and his lines are in `lines.ts` and the messages files.
+- **Called by:** the Home page and status strip. His speech box and key-moment lines run on every page.
+- **If it fails:** purely decorative, with your data unaffected. On phones it uses fewer particles, and at the Off motion setting the art holds still.
+
+### Sound (built, voice not yet)
+- **Does:** thunder, wind and game sound effects, made live by the browser with no audio files or music licences. His Japanese voice clips will play through the same code once they exist.
+- **Owns:** your mute choice, saved in this browser only.
+- **Called by:** the lobby, and anything that marks a key moment.
+- **If it fails:** phones block sound until the first tap, so nothing depends on it. The line is on screen either way.
+
+### Section places (built, code-drawn for now)
+- **Does:** gives each section its own place in the same world, with a name and accent color, over the citadel painting recolored to that place's light.
+- **Owns:** nothing. The address decides the place.
+- **Called by:** the signed-in layout.
+- **If it fails:** the section works as normal on a dark background.
 
 ### Dashboard (built)
 - **Does:** Home's hero, today's timeline and nine widgets you can open, collapse, hide and drag. The spending, portfolio and Oracle widgets are placeholders until their phases.
@@ -242,6 +254,8 @@ Each layer stops something different, so one failure doesn't expose everything. 
 - **A stock's currency follows its market.** US stocks are in USD and Taiwan stocks in TWD, so one holding's average cost can never mix two currencies.
 - **Outside sources sit behind one interface.** `market-data.ts` is the only code that talks to Finnhub, TWSE, TPEx and the rate source. Tests and preview mode use fixed answers instead, so they never touch the network.
 - **Categories are archived, never deleted.** Old records must keep their category. A default category stores a key rather than a name, so it shows in your language until you rename it.
+- **Painted art, moved by code.** Images are generated once, cut out and compressed by `scripts/prepare-art.mjs`, and animated only with movement and fading, which phones handle smoothly. The dragon is three copies of one picture, with the wings cut out so they can beat around the shoulders.
+- **The art never copies its references.** The owner's reference pictures only guided the style, because the code and art are public and nobody here knows who owns them.
 - **The Vault treats saved text as untrusted.** Addresses must be `http` or `https`, checked in both the form's schema and the database, so a saved item can't hold a `javascript:` link. Notes are turned into a page on the server with raw HTML and pictures removed, so a pasted note can't run code or tell another site you opened it. The Oracle has no way to read the Vault.
 - **Vault search runs in your browser.** The page loads your items once, and each keystroke filters them with no trip to the server. It's instant, and it suits one person's collection.
 - **Every game change is one transaction.** The server can't make several database calls safely in a row, because a crash midway would leave things half done. So one Postgres function, `apply_game_commit`, does it all. It also checks a version number, so two tabs can't overwrite each other's changes.

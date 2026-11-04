@@ -69,5 +69,18 @@ export const TIERS = [
 export const CORRECTION_WINDOW_HOURS = 24;
 
 /* Avatar and effects */
-export const AVATAR_EYE_Y_BY_TIER = [30, 30, 30, 29, 29, 28, 27, 26] as const;
+/** Which finished art each tier shows. Tiers 5, 7 and 8 borrow the nearest one until their own is painted. */
+export const WARRIOR_ART_BY_TIER = [1, 2, 3, 4, 4, 6, 6, 6] as const;
+/** Where his eyes glow on each piece of art, as a percentage across and down it. */
+export const WARRIOR_EYES_BY_ART: Record<number, { x: number; y: number }[]> = {
+  1: [{ x: 45.5, y: 10.6 }, { x: 51.5, y: 10.6 }],
+  2: [{ x: 45.5, y: 10.8 }, { x: 51.5, y: 10.8 }],
+  3: [{ x: 47, y: 10.6 }, { x: 52.5, y: 10.6 }],
+  4: [{ x: 49.5, y: 11.6 }],
+  6: [{ x: 52, y: 11.4 }],
+};
+/** How far apart lightning strikes on Home, in seconds. */
+export const LIGHTNING_GAP_SECONDS = { min: 7, max: 20 } as const;
+/** A streak this long gets him talking about your momentum. */
+export const WARRIOR_RISING_STREAK_DAYS = 3;
 export const PARTICLES = { desktop: 60, mobileFactor: 0.3 } as const;

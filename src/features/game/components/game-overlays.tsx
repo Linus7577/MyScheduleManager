@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import type { MotionLevel } from "@/config/app.config";
 import { acknowledgeProgressAction } from "../actions";
 import type { ReckoningView } from "../service";
+import { announce } from "./game-sound";
 import { Reckoning } from "./reckoning";
 
 const Cinematic = dynamic(() => import("./cinematic").then((module) => module.Cinematic), { ssr: false });
@@ -31,6 +32,11 @@ export function GameOverlays(props: {
   useEffect(() => {
     if (lostGround && !leveledUp && !tieredUp) void acknowledgeProgressAction();
   }, [lostGround, leveledUp, tieredUp]);
+
+  // Sounds and his line carry the moment. The cinematic itself shows the words.
+  useEffect(() => {
+    if (showCinematic) announce(tieredUp ? "tierUp" : "levelUp", { silentText: true });
+  }, [showCinematic, tieredUp]);
 
   if (reckoning) return <Reckoning view={reckoning} />;
   if (!showCinematic) return null;

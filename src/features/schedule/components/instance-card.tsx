@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { announce } from "@/features/game/components/game-sound";
 import { cancelInstanceAction, editInstanceAction, logInstanceAction } from "../actions";
 import type { BlockFields as BlockValues, BlockInstance, LogStatus } from "../types";
 import { BlockFields, type TrackOption } from "./block-fields";
@@ -127,7 +128,13 @@ export function InstanceCard(props: {
 
   function setStatus(status: LogStatus) {
     const next = instance.status === status ? "planned" : status;
-    run(() => logInstanceAction({ id: instance.id, status: next, log_note: instance.log_note }));
+    run(
+      () => logInstanceAction({ id: instance.id, status: next, log_note: instance.log_note }),
+      () => {
+        if (next === "skipped") announce("blockSkipped");
+        else if (next !== "planned") announce("blockDone");
+      }
+    );
   }
 
   return (

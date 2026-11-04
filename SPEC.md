@@ -151,6 +151,50 @@ Code comments: only for non-obvious logic. Game engine functions must state thei
 
 **Flavor text:** empty states and toasts use short dark-fantasy lines (e.g. "No blocks remain. The night is yours."). Keep them in i18n files, in both languages.
 
+### 6.1 Game look (owner decisions, 2026-11-04)
+
+This came after Phase 6 and is built before Phase 7. Where it conflicts with Section 6, Section 7.7 or Section 9, this section wins.
+
+- **Goal:** the app should feel like a dark game, not a dashboard. Original art only, in the style of the owner's references. It's never copied from them, and no existing characters are used.
+- **Art:** painted images generated with the owner's Canva, then brought to life by code. Text stays readable on dark panels above the art.
+- **Home is a full-screen lobby:** a blood moon, gothic citadel, red lightning and fog, with a dragon behind and the character in front. Status and the next block are on the first screen. Dashboard widgets are below, on scroll.
+- **Dragon:** a "living painting". It moves through code only: slow breathing, glowing eyes, embers, lightning flashes.
+- **Character:** one original male anime warrior, stoic, fierce, strong and merciless, with a mantle and a mysterious aura. The pose stays the same. Power states are shown by code effects.
+- **Each tier is its own design:** his head is always covered by a helmet or mask. Tiers don't show one helmet slowly breaking. Each has a unique design, and some of those happen to be broken. Blood on the armor is part of the look.
+
+| Tier | Head | Mantle and armor |
+|---|---|---|
+| 1 Hollow Squire | Deep hood over a cracked iron half-mask, only the eyes showing | Worn mantle, dented iron, dried blood |
+| 2 Ashen Knight | Ash-grey great helm with a narrow visor | Hooded ash mantle, ember sparks, blood spatter |
+| 3 Shadow Warden | Demon mask under a black hood | Shadow mantle trailing smoke, blood on the blade arm |
+| 4 Bloodbound Reaver | Spiked closed helm, glowing eye slit | Spiked armor, blood running down it |
+| 5 Dread Warlord | Massive horned helm, cracked open on one side to show one eye | Heavy war mantle, torn banner, soaked in blood |
+| 6 Abyss Sovereign | Shattered black helm, one eye and a scar exposed | Obsidian armor, rune rings |
+| 7 Crimson Tyrant | Iron skull mask split down the middle, eyes burning | Blood-drenched armor, flaming greatsword, wings of smoke |
+| 8 The Eclipse | Black-and-gold crown helm covering half the face, one eye blazing | Final-boss armor, eclipse halo |
+
+- **Voice:** he speaks Japanese, in pre-made clips, when tapped and at key moments (a block finished, Power lost, a level gained). Lines fit the owner's state, such as a streak or a bad day. Lines are original, not quotes from any work.
+- **Line text:** one line only, in the app's language (English or 繁體中文). The Japanese isn't shown as text.
+- **Other sound:** thunder and wind on Home, and game sound effects. No music. A mute control is on Home. Phones block sound until the first tap, so nothing depends on sound playing.
+- **Each section is its own place in one world,** with its own painting, accent color and layout:
+
+| Section | Place |
+|---|---|
+| Home | Blood Moon Citadel |
+| Loop | War Table |
+| Calendar | Astral Observatory |
+| Oracle | Seer's Sanctum |
+| Treasury | Dragon's Hoard |
+| Vault | Forbidden Archive |
+| Goals | Campaign Room |
+| Learning | Arcane Tower |
+| Habits | Training Grounds |
+| Battle Log | Hall of Records |
+| Doom Clock and Focus | Eclipse Clocktower |
+| More and Settings | Great Gate and Armory |
+
+- **Still required:** Section 6's accessibility rules, the Motion setting (Off shows still art), mobile performance, and the $0 budget.
+
 ---
 
 ## 7. Features

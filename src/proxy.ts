@@ -86,6 +86,6 @@ function respond(request: NextRequest, decision: ReturnType<typeof decideAccess>
 export const config = {
   // Everything is guarded by default. Only static files and cron, which has its own secret, skip this.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icons/|manifest.webmanifest|api/cron/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icons/|art/|audio/|manifest.webmanifest|api/cron/).*)",
   ],
 };

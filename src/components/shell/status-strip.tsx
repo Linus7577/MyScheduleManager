@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { ShieldAlert } from "lucide-react";
 import { POWER_MAX } from "@/config/game.config";
-import { Avatar } from "@/features/game/components/avatar";
 import { CompactClock } from "@/features/game/components/compact-clock";
+import { WarriorFace } from "@/features/game/components/warrior";
 import type { GameView } from "@/features/game/service";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,7 @@ export async function StatusStrip({ game, timeZone }: { game: GameView; timeZone
         aria-label={t("portrait")}
         className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2"
       >
-        <Avatar tier={game.tier} powerState={game.powerState} portrait className="size-10" />
+        <WarriorFace tier={game.tier} powerState={game.powerState} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1 md:max-w-md">
         <p className="flex items-center gap-1 truncate text-xs font-medium">
