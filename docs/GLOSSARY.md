@@ -33,6 +33,7 @@ Short definitions of terms you'll meet in this project.
 | **ledger** | A list of changes that's only ever added to. Current XP is the sum of the list, like a bank statement. |
 | **lazy (generation or closeout)** | Doing work only when it's first needed, rather than on a schedule. |
 | **manifest** | A small file describing the app to the phone: its name, icon and colours. It makes the app installable. |
+| **markdown** | A simple way to format plain text: `# heading`, `**bold**`, `- list`. Vault notes are written in it. |
 | **market value** | What a holding would be worth at the current price: shares times price. |
 | **migration** | A numbered file that changes the database's structure. Together they can rebuild it from nothing. |
 | **next-intl** | The library that picks the right language's text. |
@@ -41,6 +42,7 @@ Short definitions of terms you'll meet in this project.
 | **proxy** | Next.js code that runs before every page. Our gate. Older versions called it middleware. |
 | **publishable key** | The Supabase key that's safe in the browser (`sb_publishable_...`). It can only do what RLS allows. |
 | **PWA** | Progressive Web App: a website you can install on your phone like an app. |
+| **pinned** | Marked to stay at the top of the Vault list. |
 | **rate limiting** | Capping how often something can be called, to protect a free quota. |
 | **realized profit/loss (P/L)** | Profit or loss locked in by selling. Compare unrealized profit/loss. |
 | **recurring rule** | A saved instruction to create a transaction on a repeating date, such as rent every month. |
@@ -51,6 +53,7 @@ Short definitions of terms you'll meet in this project.
 | **Rest Day** | A planned day off, 1 per week, declared before the day starts. Blocks become "rest": no XP, no loss. |
 | **RLS (Row Level Security)** | Rules inside the database that decide which rows each user can touch. |
 | **secret key** | The powerful Supabase key (`sb_secret_...`) that bypasses RLS. Server only, used only by cron. |
+| **section (Vault)** | A top-level shelf in the Vault, such as Courses. Every item sits in exactly one. Tags are looser labels, and an item can have several. |
 | **server action** | A server function the page can call directly, used for saving data. |
 | **server component** | UI code that runs only on the server. Its logic and secrets never reach the browser. |
 | **snapshot** | A saved copy of a progress number for one day. Charts are drawn from these, since the live number only knows today. |
@@ -64,6 +67,7 @@ Short definitions of terms you'll meet in this project.
 | **TWSE / TPEx** | Taiwan's two stock exchanges. Their free official data gives each day's closing prices, not live ones. |
 | **tool (AI)** | A specific action the AI may ask the server to run. The AI only asks: the server decides and does the work. |
 | **track** | A course, roadmap or book you're working through. Blocks and tasks can be tagged with one. |
+| **Vault** | The hub that organizes links and notes pointing to where your files already live. It stores no files itself. |
 | **transaction** | A group of database changes that succeed or fail as one, so nothing is left half done. |
 | **transaction (money)** | One expense or income record in the Treasury. A different meaning from the database one above. |
 | **unrealized profit/loss (P/L)** | Profit or loss on shares you still hold. It moves with the price, and is only on paper until you sell. |

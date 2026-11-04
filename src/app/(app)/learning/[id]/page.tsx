@@ -6,6 +6,8 @@ import { z } from "zod";
 import { TrackDetail } from "@/features/command/components/learning";
 import { getTrackDetail, recordProgressSnapshots } from "@/features/command/service";
 import { getScheduleContext } from "@/features/schedule/context";
+import { LinkedItems } from "@/features/vault/components/linked-items";
+import { getItemsForTrack } from "@/features/vault/service";
 
 export default async function TrackPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,7 +16,7 @@ export default async function TrackPage({ params }: { params: Promise<{ id: stri
   const t = await getTranslations("learning");
   const ctx = await getScheduleContext();
   await recordProgressSnapshots(ctx);
-  const detail = await getTrackDetail(ctx, id);
+  const [detail, vaultItems] = await Promise.all([getTrackDetail(ctx, id), getItemsForTrack(ctx, id)]);
   if (!detail) notFound();
 
   return (
@@ -24,6 +26,7 @@ export default async function TrackPage({ params }: { params: Promise<{ id: stri
         {t("title")}
       </Link>
       <TrackDetail {...detail} />
+      <LinkedItems items={vaultItems} />
     </div>
   );
 }

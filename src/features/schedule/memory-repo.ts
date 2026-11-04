@@ -11,6 +11,7 @@ import type {
   WidgetSetting,
 } from "@/features/command/types";
 import { createFinanceMemoryRepo, emptyFinanceStore, type FinanceStore } from "@/features/finance/memory-repo";
+import { clearVaultLinks, createVaultMemoryRepo, emptyVaultStore, type VaultStore } from "@/features/vault/memory-repo";
 import type { AuditEntry, ClosedDay, DailySummary, GameState, LedgerEntry } from "@/features/game/types";
 import type { LoggedAudit, OracleAction, OracleMessage, Proposal, Suggestion } from "@/features/oracle/types";
 import type { AppRepo } from "./generation";
@@ -54,6 +55,7 @@ type Store = {
   loggedAudit: LoggedAudit[];
   aboutMe: string;
   finance: FinanceStore;
+  vault: VaultStore;
 };
 
 const emptyStore = (): Store => ({
@@ -87,6 +89,7 @@ const emptyStore = (): Store => ({
   loggedAudit: [],
   aboutMe: "",
   finance: emptyFinanceStore(),
+  vault: emptyVaultStore(),
 });
 
 const newId = () => crypto.randomUUID();
@@ -100,6 +103,7 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
 
   return {
     ...createFinanceMemoryRepo(store.finance),
+    ...createVaultMemoryRepo(store.vault),
 
     async getLatestConversationId() {
       return store.conversations.at(-1) ?? null;
@@ -202,6 +206,7 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
       store.goals = store.goals.filter((goal) => goal.id !== id);
       store.projects = store.projects.filter((project) => project.goal_id !== id);
       store.tasks = store.tasks.filter((task) => !projectIds.includes(task.project_id));
+      clearVaultLinks(store.vault, { goalIds: [id], projectIds });
     },
 
     async listProjects() {
@@ -218,6 +223,7 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
     async deleteProject(id) {
       store.projects = store.projects.filter((project) => project.id !== id);
       store.tasks = store.tasks.filter((task) => task.project_id !== id);
+      clearVaultLinks(store.vault, { projectIds: [id] });
     },
 
     async listTasks() {
@@ -252,6 +258,7 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
     async deleteTrack(id) {
       store.tracks = store.tracks.filter((track) => track.id !== id);
       store.units = store.units.filter((unit) => unit.track_id !== id);
+      clearVaultLinks(store.vault, { trackIds: [id] });
       store.tasks = store.tasks.map((task) => (task.track_id === id ? { ...task, track_id: null } : task));
       store.blocks = store.blocks.map((block) => (block.track_id === id ? { ...block, track_id: null } : block));
       store.instances = store.instances.map((block) => (block.track_id === id ? { ...block, track_id: null } : block));

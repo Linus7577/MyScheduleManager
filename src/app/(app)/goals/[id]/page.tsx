@@ -6,6 +6,8 @@ import { z } from "zod";
 import { GoalDetail } from "@/features/command/components/goal-detail";
 import { getGoalDetail, recordProgressSnapshots } from "@/features/command/service";
 import { getScheduleContext } from "@/features/schedule/context";
+import { LinkedItems } from "@/features/vault/components/linked-items";
+import { getItemsForGoal } from "@/features/vault/service";
 
 export default async function GoalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,7 +16,7 @@ export default async function GoalPage({ params }: { params: Promise<{ id: strin
   const t = await getTranslations("goals");
   const ctx = await getScheduleContext();
   await recordProgressSnapshots(ctx);
-  const detail = await getGoalDetail(ctx, id);
+  const [detail, vaultItems] = await Promise.all([getGoalDetail(ctx, id), getItemsForGoal(ctx, id)]);
   if (!detail) notFound();
 
   return (
@@ -24,6 +26,7 @@ export default async function GoalPage({ params }: { params: Promise<{ id: strin
         {t("title")}
       </Link>
       <GoalDetail {...detail} />
+      <LinkedItems items={vaultItems} />
     </div>
   );
 }

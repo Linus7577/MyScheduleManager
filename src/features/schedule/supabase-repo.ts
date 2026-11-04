@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { WidgetSetting } from "@/features/command/types";
 import { createFinanceSupabaseRepo } from "@/features/finance/supabase-repo";
+import { createVaultSupabaseRepo } from "@/features/vault/supabase-repo";
 import type { DailySummary, GameState, LedgerEntry } from "@/features/game/types";
 import type { OracleAction, OracleMessage, Proposal } from "@/features/oracle/types";
 import type { AppRepo } from "./generation";
@@ -66,6 +67,7 @@ const STATE_COLUMNS =
 export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo {
   return {
     ...createFinanceSupabaseRepo(db, userId),
+    ...createVaultSupabaseRepo(db, userId),
 
     async getLatestConversationId() {
       const row = unwrapMaybe(

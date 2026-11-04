@@ -14,7 +14,7 @@ export default defineConfig({
   projects: [
     {
       name: "shell-mobile",
-      testMatch: ["command.spec.ts", "finance.spec.ts", "game.spec.ts", "loop.spec.ts", "oracle.spec.ts", "shell.spec.ts", "template-guidance.spec.ts"],
+      testMatch: ["command.spec.ts", "finance.spec.ts", "game.spec.ts", "loop.spec.ts", "oracle.spec.ts", "shell.spec.ts", "template-guidance.spec.ts", "vault.spec.ts"],
       use: {
         ...devices["Pixel 7"],
         viewport: { width: 390, height: 844 },
@@ -23,7 +23,7 @@ export default defineConfig({
     },
     {
       name: "shell-desktop",
-      testMatch: ["command.spec.ts", "finance.spec.ts", "game.spec.ts", "loop.spec.ts", "oracle.spec.ts", "shell.spec.ts", "template-guidance.spec.ts"],
+      testMatch: ["command.spec.ts", "finance.spec.ts", "game.spec.ts", "loop.spec.ts", "oracle.spec.ts", "shell.spec.ts", "template-guidance.spec.ts", "vault.spec.ts"],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 },

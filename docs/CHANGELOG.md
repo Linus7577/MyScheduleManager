@@ -1,5 +1,15 @@
 # Changelog
 
+## What changed in Phase 6: The Vault
+
+- **Items:** links, notes in markdown, and references to files that live elsewhere. Nothing is uploaded.
+- **Organizing:** five default sections you can rename, add to and delete from, plus tags and pins. A section with items can't be deleted, so nothing is lost by accident.
+- **Finding things:** search across titles, descriptions, tags, addresses and note text, in English or Chinese, plus filters by section, tag and type. Icons follow the address: Drive, GitHub, YouTube, PDF or web.
+- **Links:** an item can be linked to one goal, project or learning track, and shows on that page.
+- **Safety:** only web addresses are accepted, and notes can't run code or load pictures.
+- **New database file:** `20261104000000_vault.sql`.
+- **New libraries:** `react-markdown` and `remark-gfm`, which turn notes into a page on the server and don't add to what your phone downloads.
+
 ## What changed in Phase 5: The Treasury
 
 - **Transactions:** expenses and income in TWD, USD or IDR. Each record keeps the original amount, the rate used and the TWD value. Quick add is number pad first: tap Add, type the amount, tap a category.

@@ -521,6 +521,76 @@ describe("finance tables", () => {
   });
 });
 
+describe("vault tables", () => {
+  const TABLES = ["vault_sections", "vault_items"];
+  const SECTION = "50000000-0000-0000-0000-000000000001";
+  const GOAL = "50000000-0000-0000-0000-000000000002";
+  const TRACK = "50000000-0000-0000-0000-000000000003";
+
+  const insertItem = (columns: string, values: string) =>
+    db.query(
+      `insert into public.vault_items (user_id, section_id, title, ${columns}) values ($1, $2, 'Item', ${values})`,
+      [OWNER, SECTION]
+    );
+
+  beforeAll(async () => {
+    await db.query(`insert into public.vault_sections (id, user_id, key) values ($1, $2, 'courses')`, [SECTION, OWNER]);
+    await db.query(`insert into public.goals (id, user_id, title) values ($1, $2, 'Vault goal')`, [GOAL, OWNER]);
+    await db.query(`insert into public.learning_tracks (id, user_id, kind, title) values ($1, $2, 'book', 'Vault book')`, [TRACK, OWNER]);
+    await insertItem("type, url", "'link', 'https://example.com'");
+  });
+
+  it.each(TABLES)("%s is invisible to the anon key", async (table) => {
+    await asUser(null, "anon", async () => {
+      await expect(db.query(`select * from public.${table}`)).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it.each(TABLES)("%s hides the owner's rows from another user", async (table) => {
+    await asUser(STRANGER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows).toEqual([]);
+      expect((await db.query(`delete from public.${table}`)).affectedRows).toBe(0);
+    });
+  });
+
+  it.each(TABLES)("%s is readable by its owner", async (table) => {
+    await asUser(OWNER, "authenticated", async () => {
+      expect((await db.query(`select * from public.${table}`)).rows.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("only ever stores web addresses", async () => {
+    await expect(insertItem("type, url", "'link', 'javascript:alert(1)'")).rejects.toThrow(/check constraint/);
+    await expect(insertItem("type, url", "'file', 'ftp://example.com/a'")).rejects.toThrow(/check constraint/);
+    await expect(insertItem("type", "'link'")).rejects.toThrow(/check constraint/);
+    await expect(insertItem("type, url", "'note', 'https://example.com'")).rejects.toThrow(/check constraint/);
+  });
+
+  it("refuses an unknown type, and links to two things at once", async () => {
+    await expect(insertItem("type", "'video'")).rejects.toThrow(/check constraint/);
+    await expect(
+      db.query(
+        `insert into public.vault_items (user_id, section_id, title, type, goal_id, track_id) values ($1, $2, 'Both', 'note', $3, $4)`,
+        [OWNER, SECTION, GOAL, TRACK]
+      )
+    ).rejects.toThrow(/check constraint/);
+  });
+
+  it("won't delete a section that still has items", async () => {
+    await expect(db.query(`delete from public.vault_sections where id = $1`, [SECTION])).rejects.toThrow(/foreign key/);
+  });
+
+  it("keeps an item when the goal it links to is deleted, without the link", async () => {
+    await db.query(
+      `insert into public.vault_items (user_id, section_id, title, type, goal_id) values ($1, $2, 'Linked', 'note', $3)`,
+      [OWNER, SECTION, GOAL]
+    );
+    await db.query(`delete from public.goals where id = $1`, [GOAL]);
+    const { rows } = await db.query<{ goal_id: string | null }>(`select goal_id from public.vault_items where title = 'Linked'`);
+    expect(rows).toEqual([{ goal_id: null }]);
+  });
+});
+
 describe("game tables and the atomic commit", () => {
   const GAME_TABLES = ["game_state", "game_ledger", "closed_days", "daily_summaries"];
 

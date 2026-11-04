@@ -88,7 +88,8 @@ export type ScheduleErrorCode =
   | "alreadyUndone"
   | "fxMissing"
   | "oversold"
-  | "marketUnavailable";
+  | "marketUnavailable"
+  | "sectionNotEmpty";
 
 export type ActionResult = { ok: true } | { ok: false; code: ScheduleErrorCode };
 

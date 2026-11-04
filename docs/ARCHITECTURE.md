@@ -2,7 +2,7 @@
 
 The big picture of My Schedule Manager: what the pieces are, how data moves, and how it stays private.
 
-Status: **updated at the end of Phase 5.** Parts marked *planned* describe the design for later phases and don't exist yet.
+Status: **updated at the end of Phase 6.** Parts marked *planned* describe the design for later phases and don't exist yet.
 
 ## 1. System diagram
 
@@ -134,10 +134,10 @@ flowchart LR
 - **Called by:** Treasury pages, the Home banner and widgets, and the daily cron. The Oracle has no access.
 - **If it fails:** a price source being down leaves the last known price showing, and any price or rate can be set by hand. Money trouble in the cron can't stop the day's closeout.
 
-### Vault (planned, Phase 6)
-- **Does:** organizes links and notes pointing to files stored elsewhere.
+### Vault (built)
+- **Does:** organizes links, markdown notes and references to files stored elsewhere, with sections, tags, pins, search and filters. An item can link to one goal, project or learning track, and shows on that page.
 - **Owns:** `vault_sections`, `vault_items`.
-- **Called by:** Vault pages.
+- **Called by:** Vault pages, and the goal and learning track pages.
 - **If it fails:** only the Vault is affected. It holds links, not the files themselves.
 
 ### Notifications (planned, Phase 7)
@@ -242,4 +242,6 @@ Each layer stops something different, so one failure doesn't expose everything. 
 - **A stock's currency follows its market.** US stocks are in USD and Taiwan stocks in TWD, so one holding's average cost can never mix two currencies.
 - **Outside sources sit behind one interface.** `market-data.ts` is the only code that talks to Finnhub, TWSE, TPEx and the rate source. Tests and preview mode use fixed answers instead, so they never touch the network.
 - **Categories are archived, never deleted.** Old records must keep their category. A default category stores a key rather than a name, so it shows in your language until you rename it.
+- **The Vault treats saved text as untrusted.** Addresses must be `http` or `https`, checked in both the form's schema and the database, so a saved item can't hold a `javascript:` link. Notes are turned into a page on the server with raw HTML and pictures removed, so a pasted note can't run code or tell another site you opened it. The Oracle has no way to read the Vault.
+- **Vault search runs in your browser.** The page loads your items once, and each keystroke filters them with no trip to the server. It's instant, and it suits one person's collection.
 - **Every game change is one transaction.** The server can't make several database calls safely in a row, because a crash midway would leave things half done. So one Postgres function, `apply_game_commit`, does it all. It also checks a version number, so two tabs can't overwrite each other's changes.

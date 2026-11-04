@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { ChevronRight, GraduationCap, Landmark, Lock, ScrollText, Settings, Target, Timer, type LucideIcon } from "lucide-react";
+import { ChevronRight, GraduationCap, Landmark, Library, Lock, ScrollText, Settings, Target, Timer, type LucideIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent } from "@/components/ui/card";
 
 const SEALED_HALLS = [
-  { labelKey: "vault", phase: 6 },
   { labelKey: "review", phase: 7 },
 ] as const;
 
@@ -35,6 +34,7 @@ export default async function MorePage() {
       <HallLink href="/learning" icon={GraduationCap} label={t("learning")} />
       <HallLink href="/habits" icon={Timer} label={t("habits")} />
       <HallLink href="/finance" icon={Landmark} label={t("finance")} />
+      <HallLink href="/vault" icon={Library} label={t("vault")} />
       <HallLink href="/battle-log" icon={ScrollText} label={t("battleLog")} />
       <HallLink href="/settings" icon={Settings} label={nav("settings")} />
 

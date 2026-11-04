@@ -19,3 +19,9 @@ export function isMotionLevel(value: unknown): value is MotionLevel {
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
 }
+
+export const VAULT_MAX_TAGS = 10;
+export const VAULT_MAX_TAG_LENGTH = 30;
+export const VAULT_NOTE_MAX_LENGTH = 20_000;
+/** Each key has a translated name until the owner renames it. */
+export const VAULT_DEFAULT_SECTIONS = ["courses", "projects", "learning", "finance", "personal"] as const;
