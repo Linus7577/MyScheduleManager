@@ -9,6 +9,33 @@ test.describe("production gate", () => {
     }
   });
 
+  test("the service worker and offline notice can be reached without signing in", async ({ request }) => {
+    const worker = await request.get("/sw.js", { maxRedirects: 0 });
+    expect(worker.status()).toBe(200);
+    expect(worker.headers()["content-type"]).toContain("javascript");
+
+    const offline = await request.get("/offline.html", { maxRedirects: 0 });
+    expect(offline.status()).toBe(200);
+    expect(await offline.text()).toContain("You're offline");
+  });
+
+  test("backups and timers aren't open to a signed-out visitor", async ({ request }) => {
+    for (const path of ["/api/backup/export", "/api/backup/finance?kind=transactions", "/api/calendar/export", "/api/calendar/search?q=a"]) {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(response.status(), path).toBeGreaterThanOrEqual(300);
+      expect(await response.text(), path).not.toContain("exported_at");
+    }
+    for (const path of ["/api/cron/weekly", "/api/cron/notify"]) {
+      expect((await request.get(path)).status(), path).toBe(401);
+    }
+    const restore = await request.post("/api/backup/restore", {
+      data: "{}",
+      headers: { "X-Restore-Confirm": "replace-everything" },
+      maxRedirects: 0,
+    });
+    expect(restore.status()).toBeGreaterThanOrEqual(300);
+  });
+
   test("the login and access-denied pages render", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByRole("heading", { level: 1, name: "Enter the Keep" })).toBeVisible();

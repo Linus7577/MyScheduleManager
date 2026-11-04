@@ -36,6 +36,8 @@ export const STREAK_PARTIAL_WEIGHT = 0.5;
 export const POWER_START = 100;
 export const POWER_MIN = 0;
 export const POWER_MAX = 100;
+/** Below this, the optional low Power notification goes out. */
+export const LOW_POWER_ALERT = 30;
 export const POWER_DONE_DIVISOR = 20;
 export const POWER_PARTIAL_DIVISOR = 40;
 export const POWER_SKIPPED_DIVISOR = 10;

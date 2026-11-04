@@ -3,6 +3,7 @@ import type {
   BlockInstance,
   CalendarEvent,
   EventFields,
+  ImportedEvent,
   InstanceStatus,
   LoopTemplate,
   NewInstance,
@@ -48,10 +49,18 @@ export interface ScheduleRepo {
   addRestDay(date: string, kind: RestKind): Promise<void>;
   deleteRestDay(date: string): Promise<void>;
 
-  /** Events that touch this range, including multi-day events that started before it. */
+  /** Events that touch this range, including multi-day events that started before it, and every repeating event. */
   listEvents(from: string, to: string): Promise<CalendarEvent[]>;
   getEvent(id: string): Promise<CalendarEvent | null>;
   createEvent(event: EventFields): Promise<CalendarEvent>;
-  updateEvent(id: string, event: EventFields): Promise<void>;
+  updateEvent(id: string, event: Partial<EventFields> & { exdates?: string[] }): Promise<void>;
   deleteEvent(id: string): Promise<void>;
+  /** Adds events from a calendar file in one go. */
+  importEvents(events: ImportedEvent[]): Promise<void>;
+  /** Everything in every event, for exporting. */
+  listAllEvents(): Promise<CalendarEvent[]>;
+  /** Titles and notes containing this text, ignoring case. */
+  searchEvents(query: string, limit: number): Promise<CalendarEvent[]>;
+  /** Blocks whose title contains this text, newest first. */
+  searchInstances(query: string, limit: number): Promise<BlockInstance[]>;
 }

@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { isProductive } from "@/config/game.config";
-import { createEventAction, deleteEventAction, updateEventAction } from "../actions";
+import { createEventAction, deleteEventAction, skipOccurrenceAction, updateEventAction } from "../actions";
+import { earnsXp } from "../logic";
 import type { CalendarEvent, EventFields } from "../types";
 import { CategorySelect } from "./block-fields";
+import { FIELD_CLASS } from "./meta";
 import { FormDialog } from "./form-dialog";
 import { useScheduleAction } from "./use-action";
 
@@ -20,10 +21,19 @@ function addHour(time: string): string {
   return `${String(Math.min(hours + 1, 23)).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+const REPEAT_PRESETS = { daily: "FREQ=DAILY", weekly: "FREQ=WEEKLY", monthly: "FREQ=MONTHLY" } as const;
+type RepeatChoice = "none" | keyof typeof REPEAT_PRESETS | "custom";
+
+function repeatChoice(rule: string | null | undefined): RepeatChoice {
+  if (!rule) return "none";
+  const preset = Object.entries(REPEAT_PRESETS).find(([, value]) => value === rule);
+  return preset ? (preset[0] as RepeatChoice) : "custom";
+}
+
 function initialValues({ event, date, startTime }: EventDraft): EventFields {
   if (event) {
-    const { title, notes, category, all_day, start_date, end_date, start_time, end_time } = event;
-    return { title, notes, category, all_day, start_date, end_date, start_time, end_time };
+    const { title, notes, category, all_day, start_date, end_date, start_time, end_time, rrule } = event;
+    return { title, notes, category, all_day, start_date, end_date, start_time, end_time, rrule };
   }
   const start = startTime ?? "09:00";
   return {
@@ -35,6 +45,7 @@ function initialValues({ event, date, startTime }: EventDraft): EventFields {
     end_date: date,
     start_time: start,
     end_time: addHour(start),
+    rrule: null,
   };
 }
 
@@ -42,14 +53,15 @@ export function EventDialog(props: { draft: EventDraft; onClose: () => void; onS
   const t = useTranslations("calendar");
   const { pending, error, run } = useScheduleAction();
   const [values, setValues] = useState<EventFields>(initialValues(props.draft));
-  const { event } = props.draft;
+  const [repeat, setRepeat] = useState<RepeatChoice>(repeatChoice(props.draft.event?.rrule));
+  const { event, date } = props.draft;
 
-  const productive = isProductive(values.category);
+  const productive = earnsXp(values);
 
   function update(patch: Partial<EventFields>) {
     const next = { ...values, ...patch };
-    // A productive event earns XP like a block, so it must be timed and on one date.
-    if (isProductive(next.category)) {
+    // An event that earns XP counts like a block, so it must be timed and on one date.
+    if (earnsXp(next)) {
       next.end_date = next.start_date;
       if (next.all_day) {
         next.all_day = false;
@@ -73,9 +85,22 @@ export function EventDialog(props: { draft: EventDraft; onClose: () => void; onS
     run(() => (event ? updateEventAction({ id: event.id, ...values }) : createEventAction(values)), props.onSaved);
   }
 
+  function chooseRepeat(choice: RepeatChoice) {
+    setRepeat(choice);
+    if (choice === "custom") update({ rrule: values.rrule ?? REPEAT_PRESETS.weekly });
+    else update({ rrule: choice === "none" ? null : REPEAT_PRESETS[choice] });
+  }
+
   function remove() {
-    if (!event || !window.confirm(t("deleteConfirm", { title: event.title }))) return;
+    if (!event) return;
+    const question = event.rrule ? t("deleteAllConfirm", { title: event.title }) : t("deleteConfirm", { title: event.title });
+    if (!window.confirm(question)) return;
     run(() => deleteEventAction({ id: event.id }), props.onSaved);
+  }
+
+  function removeOne() {
+    if (!event || !window.confirm(t("deleteOneConfirm", { title: event.title, date }))) return;
+    run(() => skipOccurrenceAction({ id: event.id, date }), props.onSaved);
   }
 
   return (
@@ -88,12 +113,21 @@ export function EventDialog(props: { draft: EventDraft; onClose: () => void; onS
       onSubmit={save}
       extraAction={
         event ? (
-          <Button type="button" variant="ghost" className="h-11 px-2 text-destructive" onClick={remove}>
-            {t("delete")}
-          </Button>
+          <>
+            {event.rrule && (
+              <Button type="button" variant="ghost" className="h-11 px-2 text-destructive" onClick={removeOne}>
+                {t("deleteOne")}
+              </Button>
+            )}
+            <Button type="button" variant="ghost" className="h-11 px-2 text-destructive" onClick={remove}>
+              {event.rrule ? t("deleteAll") : t("delete")}
+            </Button>
+          </>
         ) : undefined
       }
     >
+      {event?.rrule && <p className="text-xs text-muted-foreground">{t("repeatEditHint")}</p>}
+
       <div className="flex flex-col gap-2">
         <Label htmlFor="event-title">{t("eventTitle")}</Label>
         <Input
@@ -109,8 +143,42 @@ export function EventDialog(props: { draft: EventDraft; onClose: () => void; onS
       <div className="flex flex-col gap-2">
         <Label htmlFor="event-category">{t("category")}</Label>
         <CategorySelect id="event-category" value={values.category} onChange={(category) => update({ category })} />
-        <p className="text-xs text-muted-foreground">{productive ? t("productiveHint") : t("plainHint")}</p>
+        <p className="text-xs text-muted-foreground">
+          {values.rrule ? t("repeatHint") : productive ? t("productiveHint") : t("plainHint")}
+        </p>
       </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="event-repeat">{t("repeat")}</Label>
+        <select
+          id="event-repeat"
+          className={FIELD_CLASS}
+          value={repeat}
+          onChange={(e) => chooseRepeat(e.target.value as RepeatChoice)}
+        >
+          <option value="none">{t("repeatNone")}</option>
+          <option value="daily">{t("repeatDaily")}</option>
+          <option value="weekly">{t("repeatWeekly")}</option>
+          <option value="monthly">{t("repeatMonthly")}</option>
+          <option value="custom">{t("repeatCustom")}</option>
+        </select>
+      </div>
+
+      {repeat === "custom" && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="event-rule">{t("repeatRule")}</Label>
+          <Input
+            id="event-rule"
+            required
+            maxLength={300}
+            dir="ltr"
+            className="h-11 font-mono text-xs"
+            value={values.rrule ?? ""}
+            onChange={(e) => update({ rrule: e.target.value })}
+          />
+          <p className="text-xs text-muted-foreground">{t("repeatRuleHint")}</p>
+        </div>
+      )}
 
       {!productive && (
         <label className="flex min-h-11 items-center gap-3 text-sm">

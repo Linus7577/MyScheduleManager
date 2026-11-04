@@ -1,4 +1,4 @@
-import { isProductive } from "@/config/game.config";
+import type { Category } from "@/config/game.config";
 import { logBlock, rescoreBlock, reverseBlock } from "@/features/game/service";
 import { generateInstances, generateMissingInstances, type ScheduleContext } from "./generation";
 import {
@@ -8,16 +8,19 @@ import {
   checkDeclareRest,
   checkDeclareShield,
   checkEvent,
+  daysBetween,
+  earnsXp,
   findInstanceOverlaps,
   generationEnd,
   restDaysUsedInWeek,
   shieldsUsedInMonth,
 } from "./logic";
+import { eventUid, parseIcs } from "./ics";
+import { checkRepeat, expandEvents, nextOccurrence, type Occurrence } from "./recurrence";
 import type {
   ActionResult,
   BlockFields,
   BlockInstance,
-  CalendarEvent,
   EventFields,
   FeedItem,
   InstanceStatus,
@@ -28,6 +31,8 @@ import type {
 } from "./types";
 
 export type { ScheduleContext };
+
+const SEARCH_LIMIT = 20;
 
 const OK: ActionResult = { ok: true };
 const fail = (code: ScheduleErrorCode): ActionResult => ({ ok: false, code });
@@ -206,12 +211,12 @@ function eventInstanceFields(event: EventFields): BlockFields & { date: string }
 }
 
 export async function createEvent(ctx: ScheduleContext, event: EventFields): Promise<ActionResult> {
-  const problem = checkEvent(event);
+  const problem = checkEvent(event) ?? checkRepeat(event);
   if (problem) return fail(problem);
-  if (isProductive(event.category) && (await isDayClosed(ctx, event.start_date))) return fail("dayClosed");
+  if (earnsXp(event) && (await isDayClosed(ctx, event.start_date))) return fail("dayClosed");
 
   const created = await ctx.repo.createEvent(event);
-  if (isProductive(event.category)) {
+  if (earnsXp(event)) {
     const [restDay] = await ctx.repo.listRestDays(event.start_date, event.start_date);
     await ctx.repo.insertInstances([
       {
@@ -226,18 +231,18 @@ export async function createEvent(ctx: ScheduleContext, event: EventFields): Pro
 }
 
 export async function updateEvent(ctx: ScheduleContext, id: string, event: EventFields): Promise<ActionResult> {
-  const problem = checkEvent(event);
+  const problem = checkEvent(event) ?? checkRepeat(event);
   if (problem) return fail(problem);
   if (!(await ctx.repo.getEvent(id))) return fail("notFound");
 
   const linked = await ctx.repo.getInstanceByEvent(id);
   // A closed day's block has been counted, and the date it would move to may be closed as well.
   if (linked && (await isDayClosed(ctx, linked.date))) return fail("dayClosed");
-  if (await isDayClosed(ctx, event.start_date)) return fail("dayClosed");
+  if (earnsXp(event) && (await isDayClosed(ctx, event.start_date))) return fail("dayClosed");
 
   await ctx.repo.updateEvent(id, event);
 
-  if (!isProductive(event.category)) {
+  if (!earnsXp(event)) {
     if (linked) {
       await reverseBlock(ctx, linked);
       await ctx.repo.deleteInstance(linked.id);
@@ -263,6 +268,40 @@ export async function deleteEvent(ctx: ScheduleContext, id: string): Promise<Act
   }
   await ctx.repo.deleteEvent(id);
   return OK;
+}
+
+/** Takes one date out of a repeating event and leaves the rest of the series. */
+export async function skipOccurrence(ctx: ScheduleContext, id: string, date: string): Promise<ActionResult> {
+  const event = await ctx.repo.getEvent(id);
+  if (!event) return fail("notFound");
+  if (!event.rrule) return fail("invalid");
+  await ctx.repo.updateEvent(id, { exdates: [...new Set([...event.exdates, date])] });
+  return OK;
+}
+
+export type CalendarImportResult =
+  | { ok: true; added: number; duplicates: number; skipped: number; repeatsDropped: number }
+  | { ok: false; code: ScheduleErrorCode };
+
+/** Adds a calendar file's events as plain events. Importing the same file twice adds nothing the second time. */
+export async function importCalendar(
+  ctx: ScheduleContext & { timeZone: string },
+  text: string,
+  untitled: string
+): Promise<CalendarImportResult> {
+  const parsed = parseIcs(text, { timeZone: ctx.timeZone, untitled });
+  if (!parsed) return { ok: false, code: "badCalendarFile" };
+
+  const known = new Set((await ctx.repo.listAllEvents()).map(eventUid));
+  const fresh = parsed.events.filter((event) => !event.ics_uid || !known.has(event.ics_uid));
+  await ctx.repo.importEvents(fresh);
+  return {
+    ok: true,
+    added: fresh.length,
+    duplicates: parsed.events.length - fresh.length,
+    skipped: parsed.skipped,
+    repeatsDropped: parsed.repeatsDropped,
+  };
 }
 
 /* Reading */
@@ -293,9 +332,9 @@ export async function getDayView(ctx: ScheduleContext, date: string): Promise<Da
   };
 }
 
-function eventEnd(event: CalendarEvent): string {
+function eventEnd({ event, end_date }: Occurrence): string {
   // The calendar treats an all-day end date as exclusive, while events store the last day itself.
-  return event.all_day ? addDays(event.end_date, 1) : `${event.end_date}T${event.end_time}:00`;
+  return event.all_day ? addDays(end_date, 1) : `${end_date}T${event.end_time}:00`;
 }
 
 export async function getCalendarFeed(ctx: ScheduleContext, from: string, to: string): Promise<FeedItem[]> {
@@ -328,19 +367,22 @@ export async function getCalendarFeed(ctx: ScheduleContext, from: string, to: st
       };
     });
 
-  const eventItems: FeedItem[] = events.map((event) => ({
-    id: `event-${event.id}`,
-    kind: "event",
-    link: null,
-    title: event.title,
-    category: event.category,
-    status: statusByEvent.get(event.id) ?? null,
-    all_day: event.all_day,
-    start: event.all_day ? event.start_date : `${event.start_date}T${event.start_time}:00`,
-    end: eventEnd(event),
-    date: event.start_date,
-    event,
-  }));
+  const eventItems: FeedItem[] = expandEvents(events, from, to).map((occurrence) => {
+    const { event, start_date } = occurrence;
+    return {
+      id: event.rrule ? `event-${event.id}-${start_date}` : `event-${event.id}`,
+      kind: "event",
+      link: null,
+      title: event.title,
+      category: event.category,
+      status: statusByEvent.get(event.id) ?? null,
+      all_day: event.all_day,
+      start: event.all_day ? start_date : `${start_date}T${event.start_time}:00`,
+      end: eventEnd(occurrence),
+      date: start_date,
+      event,
+    };
+  });
 
   const goalByProject = new Map(projects.map((project) => [project.id, project.goal_id]));
   const taskItems: FeedItem[] = tasks
@@ -360,6 +402,36 @@ export async function getCalendarFeed(ctx: ScheduleContext, from: string, to: st
     }));
 
   return [...blockItems, ...eventItems, ...taskItems];
+}
+
+export type CalendarHit = { id: string; kind: "event" | "block"; title: string; category: Category; date: string };
+
+/** The closest matches to today come first, so a block done every day shows this week's rather than last year's. */
+export async function searchCalendar(ctx: ScheduleContext, query: string): Promise<CalendarHit[]> {
+  const [events, instances] = await Promise.all([
+    ctx.repo.searchEvents(query, SEARCH_LIMIT),
+    ctx.repo.searchInstances(query, SEARCH_LIMIT),
+  ]);
+  const hits: CalendarHit[] = [
+    ...events.map((event) => ({
+      id: `event-${event.id}`,
+      kind: "event" as const,
+      title: event.title,
+      category: event.category,
+      date: nextOccurrence(event, ctx.today),
+    })),
+    ...instances
+      .filter((instance) => !instance.event_id)
+      .map((instance) => ({
+        id: `block-${instance.id}`,
+        kind: "block" as const,
+        title: instance.title,
+        category: instance.category,
+        date: instance.date,
+      })),
+  ];
+  const distance = (hit: CalendarHit) => Math.abs(daysBetween(ctx.today, hit.date));
+  return hits.sort((a, b) => distance(a) - distance(b)).slice(0, SEARCH_LIMIT);
 }
 
 export async function getTemplatesView(ctx: ScheduleContext) {

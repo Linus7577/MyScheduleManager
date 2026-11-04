@@ -58,7 +58,7 @@ Around that core:
 - **Framework:** Next.js (App Router) + TypeScript (strict mode)
 - **Styling / UI:** Tailwind CSS + shadcn/ui, restyled to the theme in Section 6
 - **Animation:** Framer Motion for UI. Canvas 2D (or a light library) for particles.
-- **Backend:** Supabase — Postgres, Auth (Google provider), Row Level Security, Storage (only for avatar images)
+- **Backend:** Supabase — Postgres, Auth (Google provider), Row Level Security
 - **Validation:** Zod on every server action and API route
 - **Charts:** Recharts (or equivalent)
 - **Calendar UI:** a library with month/week/day views plus drag-and-drop, under a **free** license (verify the license)
@@ -158,7 +158,8 @@ This came after Phase 6 and is built before Phase 7. Where it conflicts with Sec
 - **Goal:** the app should feel like a dark game, not a dashboard. Original art only, in the style of the owner's references. It's never copied from them, and no existing characters are used.
 - **Art:** painted images generated with the owner's Canva, then brought to life by code. Text stays readable on dark panels above the art.
 - **Home is a full-screen lobby:** a blood moon, gothic citadel, red lightning and fog, with a dragon behind and the character in front. Status and the next block are on the first screen. Dashboard widgets are below, on scroll.
-- **Dragon:** a "living painting". It moves through code only: slow breathing, glowing eyes, embers, lightning flashes.
+- **Dragon on Home:** painted into the citadel scene as one picture, supplied by the owner (2026-11-04), so it's part of the sky: a crimson winged dragon coming at the viewer, jaws open, claws out, tail visible. It's a "living painting": soft-edged copies of its wings, claws, body and head move a little on top of the picture, with glowing eyes and throat, embers and lightning flashes. The warrior stands in front, off to one side.
+- **Dragon on the Oracle:** the Oracle *is* a dragon, the earlier standing one, tinted to melt into its surroundings. It stands behind the chat and moves through code the same way.
 - **Character:** one original male anime warrior, stoic, fierce, strong and merciless, with a mantle and a mysterious aura. The pose stays the same. Power states are shown by code effects.
 - **Each tier is its own design:** his head is always covered by a helmet or mask. Tiers don't show one helmet slowly breaking. Each has a unique design, and some of those happen to be broken. Blood on the armor is part of the look.
 
@@ -217,7 +218,6 @@ This came after Phase 6 and is built before Phase 7. Where it conflicts with Sec
 - motion level
 - notifications
 - categories and weights (read-only view of game config)
-- avatar images upload
 - "about me" text for the Oracle
 - export / import
 - logs
@@ -539,7 +539,7 @@ A **hub, not a file host.** It organizes links and notes pointing to where files
 - **Fields:** title, section, tags, description, linked goal/project/learning track, pinned.
 - **Default sections** (editable): Courses, Projects, Learning, Finance, Personal.
 - **Browsing:** search; filter by section, tag and type. Icon by domain (Drive, GitHub, YouTube, PDF…).
-- **No file uploads in v1**, except avatar images (Section 9).
+- **No file uploads in v1.**
 
 ### 7.15 Notifications
 
@@ -586,7 +586,7 @@ Every table has `id`, `user_id`, `created_at`, `updated_at`, and an RLS policy.
 ## 9. Avatar art pipeline
 
 **Owner-supplied images**
-- Uploaded later in Settings, stored in Supabase Storage.
+- Sent to Claude Code and added to the app's own files in `public/art`. There's no upload screen (owner's decision, 2026-11-04).
 - **Format:** 8 images, one per tier. Transparent PNG/WebP, portrait about 1024×1536.
 - **Consistency:** same pose and framing across all tiers.
 - **Optional:** a `broken` variant per tier.
@@ -652,7 +652,7 @@ Each phase's **Definition of Done:**
 | **4 — The Oracle** | Groq integration with provider abstraction; tools; proposals with approval cards; auto actions with undo; audit log; suggestion widget; rate limiting. |
 | **5 — The Treasury** | Transactions, categories, recurring, budgets with alerts, daily / monthly / yearly views; portfolio (trades, holdings, P/L, US prices via Finnhub, TW price source or manual, FX). |
 | **6 — The Vault** | Sections, items, tags, linking to goals / projects / tracks, search and filter. |
-| **7 — Rituals & Polish** | Weekly review + Sunday push; optional notifications; avatar image upload; JSON / CSV export and import; `.ics` import / export; offline queue; animation and performance polish; final docs pass. |
+| **7 — Rituals & Polish** | Weekly review + Sunday push; optional notifications; JSON / CSV export and import; `.ics` import / export; the rest of the calendar from 7.3 (recurring events, drag to move or resize, search, jump to date); offline queue; animation and performance polish; final docs pass. Owner decisions, 2026-11-04: optional notifications are real pushes, driven by a free Supabase timer. Avatar image upload is dropped, as the art is now built in (Section 6.1), and the owner sends new art to be added. |
 
 ---
 

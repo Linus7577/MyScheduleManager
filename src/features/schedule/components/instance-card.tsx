@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { CalendarDays, Hourglass, MessageSquare, Pencil, TriangleAlert } from "lucide-react";
+import { CalendarDays, CloudUpload, Hourglass, MessageSquare, Pencil, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { announce } from "@/features/game/components/game-sound";
 import { cancelInstanceAction, editInstanceAction, logInstanceAction } from "../actions";
-import type { BlockFields as BlockValues, BlockInstance, LogStatus } from "../types";
+import { enqueueCheckoff, queuedStatusFor, subscribeToQueue } from "../offline-queue";
+import type { ActionResult, BlockFields as BlockValues, BlockInstance, LogStatus } from "../types";
 import { BlockFields, type TrackOption } from "./block-fields";
 import { FormDialog } from "./form-dialog";
 import { CATEGORY_COLOR, STATUS_META } from "./meta";
@@ -122,14 +123,32 @@ export function InstanceCard(props: {
   const { pending, error, run } = useScheduleAction();
   const [dialog, setDialog] = useState<"note" | "edit" | null>(null);
 
+  // A check-off made offline shows straight away, and is marked as still waiting to be sent.
+  const queued = useSyncExternalStore(subscribeToQueue, () => queuedStatusFor(instance.id), () => null);
+  const shownStatus = queued ?? instance.status;
+
   const isRest = instance.status === "rest";
   const canLog = !isRest && !isFuture;
-  const StatusIcon = STATUS_META[instance.status].icon;
+  const StatusIcon = STATUS_META[shownStatus].icon;
+
+  async function sendOrQueue(next: LogStatus | "planned"): Promise<ActionResult> {
+    const input = { id: instance.id, status: next, log_note: instance.log_note };
+    const queue = (): ActionResult =>
+      enqueueCheckoff({ ...input, title: instance.title }) ? { ok: true } : { ok: false, code: "failed" };
+    if (!navigator.onLine) return queue();
+    try {
+      return await logInstanceAction(input);
+    } catch (error) {
+      // A failed connection, as opposed to the server refusing. Browsers can think they're online when they aren't.
+      if (error instanceof TypeError) return queue();
+      throw error;
+    }
+  }
 
   function setStatus(status: LogStatus) {
-    const next = instance.status === status ? "planned" : status;
+    const next = shownStatus === status ? "planned" : status;
     run(
-      () => logInstanceAction({ id: instance.id, status: next, log_note: instance.log_note }),
+      () => sendOrQueue(next),
       () => {
         if (next === "skipped") announce("blockSkipped");
         else if (next !== "planned") announce("blockDone");
@@ -155,11 +174,11 @@ export function InstanceCard(props: {
         <span
           className={cn(
             "flex shrink-0 items-center gap-1 text-xs font-medium",
-            STATUS_META[instance.status].colorClass
+            STATUS_META[shownStatus].colorClass
           )}
         >
           <StatusIcon className="size-4" aria-hidden="true" />
-          {statuses(instance.status)}
+          {statuses(shownStatus)}
         </span>
       </div>
 
@@ -174,7 +193,7 @@ export function InstanceCard(props: {
         <div role="group" aria-label={t("logLabel")} className="grid grid-cols-3 gap-2">
           {LOG_STATUSES.map((status) => {
             const Icon = STATUS_META[status].icon;
-            const selected = instance.status === status;
+            const selected = shownStatus === status;
             return (
               <Button
                 key={status}
@@ -195,6 +214,13 @@ export function InstanceCard(props: {
             );
           })}
         </div>
+      )}
+
+      {queued && (
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <CloudUpload className="size-3.5 shrink-0" aria-hidden="true" />
+          {t("waitingToSync")}
+        </p>
       )}
 
       {instance.log_note && (

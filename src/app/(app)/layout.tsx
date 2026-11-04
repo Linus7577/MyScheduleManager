@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { BottomNav } from "@/components/shell/bottom-nav";
-import { PlaceBackdrop, PlaceName } from "@/components/shell/place-backdrop";
+import { OfflineSync } from "@/components/shell/offline-sync";
+import { PageVeil, PlaceBackdrop, PlaceName } from "@/components/shell/place-backdrop";
 import { Sidebar } from "@/components/shell/sidebar";
 import { StatusStrip } from "@/components/shell/status-strip";
 import { GameOverlays } from "@/features/game/components/game-overlays";
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div data-motion={motion} className="min-h-dvh md:pl-56">
       <PlaceBackdrop />
+      <PageVeil />
       <Sidebar />
       <div className="flex min-h-dvh flex-col">
         <StatusStrip game={game} timeZone={ctx.timeZone} />
@@ -27,6 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             {t("banner")}
           </p>
         )}
+        <OfflineSync serviceWorker={process.env.NODE_ENV === "production"} />
         <main className="flex-1 px-4 pt-6 pb-24 md:px-8 md:pb-8">
           <PlaceName />
           {children}

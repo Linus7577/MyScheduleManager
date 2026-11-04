@@ -96,7 +96,7 @@ You don't need these yet. They're here so this file stays complete.
 
 - **Phase 4, Groq:** create a free key at console.groq.com, under **API Keys**, and add it as `GROQ_API_KEY` to `.env.local` and to Vercel. **Why:** this powers the Oracle. `AI_PROVIDER`, `AI_BASE_URL` and `AI_MODEL` are optional, with Groq as the default, and they let you change provider without a code change. Groq's model list changes over time, so if the Oracle stops answering, check `AI_MODEL` against their docs first.
 - **Phase 5, Finnhub:** create a free key at finnhub.io and set `FINNHUB_API_KEY` in `.env.local` and in Vercel. **Why:** US stock prices. Without it, US prices are set by hand. Taiwan prices and exchange rates need no key.
-- **Phase 7, VAPID keys:** these identify your app to the browser's push service, so only you can send it notifications. The exact command is added when that phase is built.
+- **Phase 7, notifications:** see "Turning on notifications" below.
 
 ## Making the voice clips
 You only need this to change or add the warrior's lines. The finished clips are already in `public/audio/voice`.
@@ -118,6 +118,31 @@ You only need this to change or add the warrior's lines. The finished clips are 
 Add a line to `src/config/voice-lines.ts` and to both messages files first. **Why:** tests check that every line has its Japanese and both translations.
 
 **The credit is required.** The voice's terms ask for `VOICEVOX:青山龍星` to be shown, which the app does in Settings and at the bottom of Home. Individuals may use it free, commercially or not. A company or sole proprietor must ask [ななはぴ](https://v.seventhh.com/contact/) first, so check this if the app ever becomes a business. The clips also can't be used to train other voice models.
+
+## Turning on notifications
+This has three parts. The app works without any of them, and only the alerts wait.
+
+**1. Make the keys.** **Why:** they identify your app to the browser's push service, so nobody else can send you notifications. Run this once:
+
+```bash
+node scripts/generate-vapid.mjs
+```
+
+It saves both keys in `.env.local` without showing them. It refuses to replace existing keys, because new ones would cut off every device already turned on.
+
+**2. Copy them into Vercel.** Open `.env.local` in Notepad. In Vercel, go to Settings, then Environment Variables, and add `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. Then redeploy. **Why:** the app reads the public key when it's built. Check `SUPABASE_SECRET_KEY` there is complete too, since all timers use it.
+
+**3. Turn it on.** Open the app on your phone, go to Settings, tap "Turn on for this device", then "Send a test". Only the Sunday review is on until you choose others.
+
+### Notifications timer
+**Why:** Vercel's free timers run once a day at most, so "a block starts now" needs another clock. This one lives in the database and is free. Only the optional alerts need it. The Sunday review doesn't.
+
+1. Open `supabase/timers/notify-timer.sql`.
+2. Copy it into Supabase's SQL Editor. Check the project name at the top says `my-schedule-manager-tokyo`.
+3. In the editor, not the file, replace `PASTE_CRON_SECRET_HERE` with your `CRON_SECRET` from `.env.local`.
+4. Run it. The last result should list two timers.
+
+To check it's working, run `select * from cron.job_run_details order by start_time desc limit 5;`. **If Supabase refuses the extensions,** the optional alerts can't run on this plan. Tell Claude Code, and they'll become in-app alerts instead, as the spec allows.
 
 ## Adding database changes later
 Each phase adds a new file in `supabase/migrations/`. Run each new file once in the SQL Editor, oldest first, **before** deploying the code that needs it. **Why:** this keeps the live database matching the code, and pages using a table that doesn't exist yet would fail.

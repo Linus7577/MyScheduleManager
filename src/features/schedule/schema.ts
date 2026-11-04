@@ -59,9 +59,20 @@ export const eventSchema = z.strictObject({
   end_date: dateSchema,
   start_time: timeSchema.nullable(),
   end_time: timeSchema.nullable(),
+  rrule: z
+    .string()
+    .trim()
+    .max(300)
+    .nullable()
+    .optional()
+    .transform((rule) => rule || null),
 });
 
 export const updateEventSchema = z.strictObject({ id: idSchema, ...eventSchema.shape });
+
+export const skipOccurrenceSchema = z.strictObject({ id: idSchema, date: dateSchema });
+
+export const calendarSearchSchema = z.strictObject({ q: z.string().trim().min(1).max(80) });
 
 export const calendarRangeSchema = z
   .strictObject({ start: dateSchema, end: dateSchema })

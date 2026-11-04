@@ -1,5 +1,6 @@
 import type { ScheduleContext } from "@/features/schedule/generation";
 import { addDays, weekDates, weekStart } from "@/features/schedule/logic";
+import { expandEvents } from "@/features/schedule/recurrence";
 import type { ActionResult } from "@/features/schedule/types";
 import { buildSnapshots, dailyStats, goalPercent, normalizeLayout, projectPercent, studyMinutesByWeek, trackPercent } from "./logic";
 import type { DashboardDevice, HabitCheckin, Task, TaskFields, UnitFields, WidgetSetting } from "./types";
@@ -167,8 +168,15 @@ export async function getUpcoming(ctx: ScheduleContext) {
   const end = addDays(ctx.today, UPCOMING_DAYS);
   const [events, tasks] = await Promise.all([ctx.repo.listEvents(ctx.today, end), ctx.repo.listTasksDue(ctx.today, end)]);
   const openTasks: Task[] = tasks.filter((task) => task.status !== "done");
+  // A daily event would otherwise fill the list, so each series shows only its next date.
+  const seen = new Set<string>();
+  const nextOfEach = expandEvents(events, ctx.today, end).filter(({ event }) => {
+    if (seen.has(event.id)) return false;
+    seen.add(event.id);
+    return true;
+  });
   return {
-    events: events.sort((a, b) => a.start_date.localeCompare(b.start_date)),
+    events: nextOfEach.map(({ event, start_date }) => ({ id: event.id, title: event.title, start_date })),
     tasks: openTasks.sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? "")),
   };
 }

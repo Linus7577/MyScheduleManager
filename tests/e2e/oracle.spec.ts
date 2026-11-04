@@ -18,6 +18,31 @@ test.afterAll(async ({ request }) => {
   await seed(request);
 });
 
+test("the Oracle is the dragon, which moves behind the words and holds still at Off", async ({ page, context, request, baseURL }) => {
+  await seed(request);
+  await page.goto("/oracle");
+  await expect(page.getByRole("textbox", { name: "Your message" })).toBeVisible();
+
+  const dragon = page.locator(".oracle-dragon:visible");
+  await expect(dragon).toHaveCount(1);
+  await expect
+    .poll(() => page.evaluate(() => [...document.images].some((image) => image.src.includes("oracle/dragon-face") && image.naturalWidth > 0)))
+    .toBe(true);
+  await expect
+    .poll(() =>
+      dragon.locator("img").first().evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)
+    )
+    .toBe(true);
+  const moving = () => dragon.locator(".dragon-breathe").evaluate((element) => element.getAnimations().length);
+  expect(await moving()).toBeGreaterThan(0);
+
+  await context.addCookies([{ name: "motion", value: "off", url: baseURL as string }]);
+  await page.reload();
+  await expect(dragon).toHaveCount(1);
+  expect(await moving()).toBe(0);
+  await context.clearCookies({ name: "motion" });
+});
+
 test("the Oracle answers, and the conversation is remembered", async ({ page, request }) => {
   await seed(request);
   await page.goto("/oracle");

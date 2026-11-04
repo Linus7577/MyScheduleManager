@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { PAINTING_GLOWS, PAINTING_SIZE } from "../../src/config/lobby-art";
 
 // The Home lobby and the look of each section. Each test starts from a known state, and they run one at a time.
 
@@ -23,7 +24,7 @@ test.afterAll(async ({ request }) => {
   await seed(request);
 });
 
-test("Home shows the citadel, dragon and warrior, with no browser errors", async ({ page, request }) => {
+test("Home shows the painting and the warrior, with no browser errors", async ({ page, request }) => {
   await seed(request);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -33,8 +34,8 @@ test("Home shows the citadel, dragon and warrior, with no browser errors", async
 
   await page.goto("/");
   await expect(lobby(page)).toBeVisible();
-  await artLoaded(page, "citadel");
-  await artLoaded(page, "dragon");
+  await artLoaded(page, "home/painting.webp");
+  await artLoaded(page, "layer-head");
   await artLoaded(page, "warrior/tier-1.webp");
   await artLoaded(page, "tier-1-face");
   await expect(lobby(page).getByText("Hollow Squire")).toBeVisible();
@@ -147,19 +148,50 @@ test("marking a block done brings the sound and a line from him", async ({ page,
   expect(await speech.textContent()).not.toMatch(/[぀-ヿ]/);
 });
 
+test("the painting fills the scene, its moving parts line up with it, and the warrior stands in front to one side", async ({ page, request }) => {
+  await seed(request);
+  await page.goto("/");
+  await expect(lobby(page)).toBeVisible();
+  const box = async (selector: string) => {
+    const found = await page.locator(selector).first().boundingBox();
+    if (!found) throw new Error(`${selector} has no position`);
+    return found;
+  };
+  const scene = await box(".lobby");
+  const painting = await box(".lobby-painting");
+  const warrior = await box(".lobby-warrior");
+
+  // Reaches past both sides, with no gap, and the dragon stays in the middle.
+  expect(painting.x).toBeLessThanOrEqual(scene.x + 1);
+  expect(painting.x + painting.width).toBeGreaterThanOrEqual(scene.x + scene.width - 1);
+  expect(Math.abs(painting.x + painting.width / 2 - (scene.x + scene.width / 2))).toBeLessThan(2);
+
+  const middle = warrior.x + warrior.width / 2;
+  expect(Math.abs(middle - (scene.x + scene.width / 2))).toBeGreaterThan(scene.width * 0.1);
+  // He leaves the dragon's open jaws in view: below them on a phone, and beside them on a computer.
+  const [jawX, jawY] = PAINTING_GLOWS.maw;
+  const jaws = {
+    x: painting.x + (jawX / PAINTING_SIZE.width) * painting.width,
+    y: painting.y + (jawY / PAINTING_SIZE.height) * painting.height,
+  };
+  const covered =
+    jaws.x >= warrior.x && jaws.x <= warrior.x + warrior.width && jaws.y >= warrior.y && jaws.y <= warrior.y + warrior.height;
+  expect(covered).toBe(false);
+});
+
 test("the painting moves at Full motion, and holds still at Off", async ({ page, context, request, baseURL }) => {
   await seed(request);
   const moving = () =>
     page.evaluate(
       () =>
-        [".dragon-wing-left", ".dragon-wing-right", ".dragon-breathe", ".warrior-breathe", ".warrior-wisp-1"].filter(
+        [".painted-wing-left", ".painted-wing-right", ".painted-body", ".painted-claw-left", ".painted-claw-right", ".painted-head", ".painted-eye", ".warrior-breathe", ".warrior-wisp-1"].filter(
           (selector) => (document.querySelector(selector)?.getAnimations().length ?? 0) > 0
         ).length
     );
 
   await page.goto("/");
   await expect(lobby(page)).toBeVisible();
-  expect(await moving()).toBe(5);
+  expect(await moving()).toBe(9);
 
   await context.addCookies([{ name: "motion", value: "off", url: baseURL as string }]);
   await page.reload();

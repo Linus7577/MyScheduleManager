@@ -14,6 +14,7 @@ export interface GameRepo {
   listLedger(limit: number): Promise<LedgerEntry[]>;
   listLedgerForBlocks(blockIds: string[]): Promise<LedgerEntry[]>;
   listAllLedger(): Promise<LedgerEntry[]>;
+  listLedgerBetween(from: string, to: string): Promise<LedgerEntry[]>;
 
   getClosedDay(date: string): Promise<ClosedDay | null>;
   earliestInstanceDate(): Promise<string | null>;

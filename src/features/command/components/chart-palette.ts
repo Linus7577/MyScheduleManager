@@ -9,3 +9,7 @@ export const OTHER_COLOR = "#8a8580";
 /** Income and spending keep the same colour wherever they appear. */
 export const INCOME_COLOR = SERIES_COLORS[0];
 export const EXPENSE_COLOR = SERIES_COLORS[1];
+
+/** A gain and a loss, wherever they're charted. */
+export const GAIN_COLOR = SERIES_COLORS[0];
+export const LOSS_COLOR = SERIES_COLORS[1];

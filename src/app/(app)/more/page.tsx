@@ -1,11 +1,6 @@
 import Link from "next/link";
-import { ChevronRight, GraduationCap, Landmark, Library, Lock, ScrollText, Settings, Target, Timer, type LucideIcon } from "lucide-react";
+import { CalendarCheck, ChevronRight, GraduationCap, Landmark, Library, ScrollText, Settings, Target, Timer, type LucideIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { Card, CardContent } from "@/components/ui/card";
-
-const SEALED_HALLS = [
-  { labelKey: "review", phase: 7 },
-] as const;
 
 function HallLink(props: { href: string; icon: LucideIcon; label: string }) {
   const Icon = props.icon;
@@ -35,24 +30,9 @@ export default async function MorePage() {
       <HallLink href="/habits" icon={Timer} label={t("habits")} />
       <HallLink href="/finance" icon={Landmark} label={t("finance")} />
       <HallLink href="/vault" icon={Library} label={t("vault")} />
+      <HallLink href="/review" icon={CalendarCheck} label={t("review")} />
       <HallLink href="/battle-log" icon={ScrollText} label={t("battleLog")} />
       <HallLink href="/settings" icon={Settings} label={nav("settings")} />
-
-      <Card>
-        <CardContent>
-          <ul className="flex flex-col divide-y">
-            {SEALED_HALLS.map((hall) => (
-              <li key={hall.labelKey} className="flex min-h-12 items-center justify-between gap-3 py-2 text-sm">
-                <span>{t(hall.labelKey)}</span>
-                <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
-                  <Lock className="size-3.5" aria-hidden="true" />
-                  {t("locked", { phase: hall.phase })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Eye, Send, X } from "lucide-react";
+import { Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MAX_MESSAGE_CHARS } from "@/config/oracle.config";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 import type { OracleEvent } from "../service";
 import type { OracleAction, OracleMessage, Proposal } from "../types";
 import { ActionCard, ProposalCard } from "./cards";
+import { OracleDragon } from "./oracle-dragon";
 
 type TimelineItem =
   | { type: "message"; at: string; message: OracleMessage }
@@ -32,12 +34,12 @@ function Bubble({ role, children }: { role: OracleMessage["role"]; children: Rea
 }
 
 /** A full-screen sheet on phones and a side drawer on desktop, as a page of its own. */
-export function OracleChat(props: { messages: OracleMessage[]; proposals: Proposal[]; actions: OracleAction[]; now: string }) {
+export function OracleChat(props: { messages: OracleMessage[]; proposals: Proposal[]; actions: OracleAction[]; now: string ; initialText?: string }) {
   const t = useTranslations("oracle");
   const errors = useTranslations("errors");
   const router = useRouter();
   const endRef = useRef<HTMLDivElement>(null);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(props.initialText ?? "");
   const [sending, setSending] = useState(false);
   const [pendingUser, setPendingUser] = useState<string | null>(null);
   const [streaming, setStreaming] = useState("");
@@ -106,9 +108,14 @@ export function OracleChat(props: { messages: OracleMessage[]; proposals: Propos
   const showStreaming = streaming && lastSaved !== streaming;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-bg md:top-0 md:right-0 md:bottom-0 md:left-auto md:w-[28rem] md:border-l">
+    <div className="fixed inset-0 z-50 isolate flex flex-col bg-bg md:top-0 md:right-0 md:bottom-0 md:left-auto md:w-[28rem] md:border-l">
+      {/* On a phone the chat fills the screen, so the dragon stands behind the words. On a computer it has the page beside them. */}
+      <div aria-hidden="true" className="absolute inset-0 -z-10 overflow-hidden md:hidden">
+        <OracleDragon />
+        <div className="oracle-veil absolute inset-0" />
+      </div>
       <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <Eye className="size-5 text-crimson-400" aria-hidden="true" />
+        <Image src="/art/oracle/dragon-face.webp" alt="" width={36} height={36} unoptimized className="size-9 rounded-full ring-1 ring-crimson-700/70" />
         <h1 className="flex-1 text-lg font-semibold">{t("title")}</h1>
         <Link href="/" aria-label={t("close")} className="flex size-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-2">
           <X className="size-5" aria-hidden="true" />

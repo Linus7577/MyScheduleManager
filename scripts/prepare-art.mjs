@@ -1,9 +1,10 @@
-// Turns exported art into the small files the app serves. Run with: node scripts/prepare-art.mjs <folder of PNGs>
-// Expects citadel.png, dragon.png and warrior-1.png to warrior-8.png. Any that are missing are skipped.
+// Turns exported art into the small files the app serves. Run with: node scripts/prepare-art.mjs <folder of images>
+// Expects painting.webp, citadel.png, dragon.png and warrior-1.png to warrior-8.png. Any that are missing are skipped.
 // Dragon and warrior art is painted on flat grey, which this cuts away, keeping soft smoke and mist see-through.
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
+import { LAYER_FEATHER, layerBox, PAINTING_LAYERS, PAINTING_SIZE } from "../src/config/lobby-art.ts";
 
 const source = process.argv[2];
 if (!source) throw new Error("Pass the folder holding the exported PNGs");
@@ -11,6 +12,7 @@ if (!source) throw new Error("Pass the folder holding the exported PNGs");
 const OUT = "public/art";
 mkdirSync(join(OUT, "warrior"), { recursive: true });
 mkdirSync(join(OUT, "home"), { recursive: true });
+mkdirSync(join(OUT, "oracle"), { recursive: true });
 
 // How far a colour may sit from the background and still be background.
 const HARD = 34;
@@ -86,12 +88,72 @@ function cutOut({ data, info }) {
   return sharp(data, { raw: { width, height, channels: 4 } });
 }
 
+/**
+ * Paints the dragon into the sky, so it reads as part of the scene behind the warrior instead of a second figure beside him.
+ * Done here rather than with live blending, which would cost a phone real work on every frame of its movement.
+ */
+const SKY = [24, 3, 6];
+const clamp = (value, low = 0, high = 1) => Math.min(high, Math.max(low, value));
+const smooth = (from, to, value) => {
+  const t = clamp((value - from) / (to - from));
+  return t * t * (3 - 2 * t);
+};
+// Lightens toward a color without dimming what's already bright, so blacks take the sky's red and veins stay hot.
+const screen = (value, sky) => 255 - ((255 - value) * (255 - sky)) / 255;
+
+async function paintIntoSky(image) {
+  const png = await image.ensureAlpha().png().toBuffer();
+  const { data, info } = await sharp(png).blur(0.7).raw().toBuffer({ resolveWithObject: true });
+  const original = await sharp(png).raw().toBuffer();
+  const softAlpha = await sharp(png).extractChannel("alpha").blur(3).raw().toBuffer();
+  const { width, height } = info;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+      // How much of this pixel is a glowing vein, as opposed to grey scale.
+      const heat = clamp(((r - Math.max(g, b)) / 255) * 1.8);
+      // Scales go darker and redder while veins don't, which keeps it rich instead of washed out.
+      const dim = 1 - (1 - heat) * 0.3;
+      data[i] = clamp(screen(r * dim * (1 + heat * 0.3), SKY[0]), 0, 255);
+      data[i + 1] = clamp(screen(g * (0.52 - heat * 0.2), SKY[1]), 0, 255);
+      data[i + 2] = clamp(screen(b * (0.56 - heat * 0.2), SKY[2]), 0, 255);
+
+      // Soft edges, with the far parts dissolving: the lower body into the fog, and the wing tips into the sky.
+      const edge = smooth(0.35, 0.95, softAlpha[y * width + x] / 255);
+      const lower = 1 - smooth(0.36, 0.8, y / height);
+      const side = 1 - 0.65 * smooth(0.68, 1, Math.abs((2 * x) / width - 1));
+      data[i + 3] = original[i + 3] * edge * lower * side * 0.96;
+    }
+  }
+  return sharp(data, { raw: { width, height, channels: 4 } });
+}
+
 async function load(name) {
   return sharp(join(source, name)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 }
 
 function report(path) {
   console.log(`${path}  ${Math.round(statSync(path).size / 1024)} KB`);
+}
+
+// The Home painting, and a soft-edged copy of each part that moves.
+if (existsSync(join(source, "painting.webp"))) {
+  const { width, height } = PAINTING_SIZE;
+  const painting = await sharp(join(source, "painting.webp")).resize(width, height).removeAlpha().png().toBuffer();
+  const path = join(OUT, "home", "painting.webp");
+  await sharp(painting).webp({ quality: 86, effort: 6 }).toFile(path);
+  report(path);
+  for (const layer of PAINTING_LAYERS) {
+    const outline = layer.points.map(([x, y]) => `${x},${y}`).join(" ");
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><filter id="soft"><feGaussianBlur stdDeviation="${LAYER_FEATHER}"/></filter><rect width="${width}" height="${height}" fill="#000"/><polygon points="${outline}" fill="#fff" filter="url(#soft)"/></svg>`;
+    const mask = await sharp(Buffer.from(svg)).extractChannel(0).png().toBuffer();
+    const file = join(OUT, "home", `layer-${layer.id}.webp`);
+    const whole = await sharp(painting).joinChannel(mask).png().toBuffer();
+    await sharp(whole).extract(layerBox(layer.points)).webp({ quality: 82, alphaQuality: 80, effort: 6 }).toFile(file);
+    report(file);
+  }
 }
 
 if (existsSync(join(source, "citadel.png"))) {
@@ -101,10 +163,16 @@ if (existsSync(join(source, "citadel.png"))) {
 }
 
 if (existsSync(join(source, "dragon.png"))) {
-  const path = join(OUT, "home", "dragon.webp");
+  const path = join(OUT, "oracle", "dragon.webp");
   const cut = await cutOut(await load("dragon.png")).png().toBuffer();
-  await sharp(cut).trim({ threshold: 1 }).resize({ height: 1100, withoutEnlargement: true }).modulate({ brightness: 0.8 }).webp({ quality: 80, alphaQuality: 80, effort: 6 }).toFile(path);
+  const sized = sharp(await sharp(cut).trim({ threshold: 1 }).resize({ height: 1100, withoutEnlargement: true }).modulate({ brightness: 0.8 }).png().toBuffer());
+  await (await paintIntoSky(sized)).webp({ quality: 82, alphaQuality: 80, effort: 6 }).toFile(path);
   report(path);
+  // Its head, for beside the Oracle's name.
+  const face = join(OUT, "oracle", "dragon-face.webp");
+  const head = { left: 280, top: 0, width: 240, height: 240 };
+  await sharp(await sized.clone().png().toBuffer()).extract(head).resize(96, 96).flatten({ background: "#14060a" }).webp({ quality: 82, effort: 6 }).toFile(face);
+  report(face);
 }
 
 for (let tier = 1; tier <= 8; tier++) {

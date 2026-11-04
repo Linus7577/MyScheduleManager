@@ -2,7 +2,7 @@
 
 The big picture of My Schedule Manager: what the pieces are, how data moves, and how it stays private.
 
-Status: **updated at the end of Phase 6.** Parts marked *planned* describe the design for later phases and don't exist yet.
+Status: **updated at the end of Phase 7, the last planned phase.** Everything described here exists. What's still to come is art, listed in `docs/CHANGELOG.md`.
 
 ## 1. System diagram
 
@@ -10,21 +10,24 @@ Status: **updated at the end of Phase 6.** Parts marked *planned* describe the d
 flowchart LR
   subgraph Device["Your phone or computer"]
     PWA["Browser / installed PWA"]
+    SW["Service worker<br/>offline Loop, notifications"]
   end
 
   subgraph Vercel["Vercel (Hobby)"]
     Proxy["Proxy<br/>the gate on every request"]
     App["Next.js<br/>pages, server actions, API routes"]
-    Cron["Vercel Cron<br/>once a day"]
+    Cron["Vercel Cron<br/>nightly, and Sunday evening"]
   end
 
   subgraph Supabase["Supabase (Free)"]
     Auth["Auth<br/>Google sign-in"]
     DB[("Postgres<br/>protected by RLS")]
+    Timer["Database timer<br/>every five minutes"]
   end
 
   Google["Google"]
   Groq["Groq AI"]
+  Push["Browser push service<br/>Google, Mozilla, Apple or Microsoft"]
   Finnhub["Finnhub<br/>US prices"]
   TW["TWSE and TPEx<br/>Taiwan closing prices"]
   FX["ExchangeRate-API<br/>daily exchange rates"]
@@ -34,6 +37,9 @@ flowchart LR
   App --> DB
   Auth <--> Google
   Cron -->|"secret header"| App
+  Timer -->|"secret header"| App
+  App --> Push --> SW
+  PWA <--> SW
   App --> Groq
   App --> Finnhub
   App --> TW
@@ -63,9 +69,9 @@ flowchart LR
 - **If it fails:** you see an error and nothing is saved. Existing logs are safe, and generation can safely run again.
 
 ### Calendar (built)
-- **Does:** month, week, day and agenda views of blocks and one-off events. Deadlines arrive with tasks in Phase 3.
+- **Does:** month, week, day and agenda views of blocks, events and task deadlines. Events can repeat (daily, weekly, monthly or a custom rule), be dragged to a new time, be found by search, and move in and out of `.ics` files. A repeating event is one row plus its rule, worked out into dates only when the calendar asks. It stays on the calendar and earns no XP, because only a one-off event counts like a block.
 - **Owns:** `events`.
-- **Called by:** the Calendar page, which asks `/api/calendar` for the dates on screen.
+- **Called by:** the Calendar page, which asks `/api/calendar` for the dates on screen, plus `/api/calendar/search`, `/import` and `/export`.
 - **If it fails:** only the calendar shows an error. Its heavy code downloads only on this page.
 
 ### Game Engine (built)
@@ -87,8 +93,8 @@ flowchart LR
 - **If it fails:** only the visual stops. No XP or Power depends on it, and leaving focus mode has no penalty.
 
 ### Home lobby and warrior (built, art partly finished)
-- **Does:** shows the full-screen citadel, the living-painting dragon and the warrior for your tier. His aura, eyes, cracks and color follow your Power state. Lightning, fog, embers and his lines add to it, along with the level-up and tier-up cinematics.
-- **Owns:** nothing in the database. It only reflects the game state. Art is in `public/art`, and his lines are in `lines.ts` and the messages files.
+- **Does:** shows the full-screen painting, with the dragon coming out of the sky over the citadel, and the warrior for your tier in front of it. The dragon's wings, claws, head and body move a little, and its eyes and throat glow. His aura, eyes, cracks and color follow your Power state. Lightning, fog, embers and his lines add to it, along with the level-up and tier-up cinematics.
+- **Owns:** nothing in the database. It only reflects the game state. Art is in `public/art`, the outlines of the painting's moving parts are in `src/config/lobby-art.ts`, and his lines are in `lines.ts` and the messages files.
 - **Called by:** the Home page and status strip. His speech box and key-moment lines run on every page.
 - **If it fails:** purely decorative, with your data unaffected. On phones it uses fewer particles, and at the Off motion setting the art holds still.
 
@@ -129,6 +135,7 @@ flowchart LR
 - **If it fails:** an error appears and nothing is saved. Nothing else depends on it.
 
 ### AI Oracle (built)
+- **Looks like:** a dragon. The standing crimson dragon lives here, behind the chat on a phone and beside it on a computer, and the Oracle's instructions say that's what it is.
 - **Does:** chat that reads a short summary of your week and acts only through a fixed list of 13 tools. Reads and goal or task creation happen directly. Schedule changes become proposals you approve, edit or reject.
 - **Owns:** `ai_conversations`, `ai_messages`, `ai_proposals`, `ai_actions`, `ai_suggestions`, `ai_rate_limits`, `weekly_reviews`.
 - **Called by:** the chat panel, through `/api/oracle/chat`, and the suggestion widget.
@@ -152,15 +159,33 @@ flowchart LR
 - **Called by:** Vault pages, and the goal and learning track pages.
 - **If it fails:** only the Vault is affected. It holds links, not the files themselves.
 
-### Notifications (planned, Phase 7)
-- **Does:** sends the Sunday review push through the browser's Web Push system.
-- **Owns:** `push_subscriptions`.
-- **Called by:** the weekly cron.
-- **If it fails:** you miss the alert, but the review still exists in the app.
+### Weekly review (built)
+- **Does:** shows any week's planned and done minutes, XP, Power, streak, Rest Days and Shields, goal progress and spending, next to the Oracle's written review and your three answers. A button asks the Oracle to propose changes to next week's loop, which still need your approval.
+- **Owns:** `weekly_reviews`.
+- **Called by:** the Review page, and Sunday evening's job.
+- **If it fails:** without the Oracle, the numbers and your answers still work. The Oracle is never given your money figures.
+
+### Notifications (built)
+- **Does:** sends the Sunday review, and whichever optional alerts you turn on: a block starting, open blocks near midnight, and low Power.
+- **Owns:** `push_subscriptions`, `notification_log`, and the `notify_` columns of `settings`.
+- **Called by:** Vercel Cron on Sunday, and a timer inside the database every five minutes. Vercel's free timers can't run that often, so the database's free one (`pg_cron`) calls the app instead.
+- **If it fails:** you miss an alert, and nothing else is affected. Everything still exists in the app. `notification_log` makes sure a timer that runs twice can't send twice.
+
+### Offline (built)
+- **Does:** keeps today's Loop readable with no connection, and holds check-offs made offline until you're back. Other pages show a plain notice instead.
+- **Owns:** a saved copy of the Loop page in the browser's cache, and the waiting check-offs in the browser's local storage. Nothing new on the server.
+- **Called by:** the service worker (`public/sw.js`), started by the app shell.
+- **If it fails:** the app works as it did before, needing a connection. A check-off the server refuses, for example because that day has closed, is reported on screen rather than lost silently.
+
+### Backup and restore (built)
+- **Does:** downloads everything as one JSON file, and money as CSV spreadsheets. Restore replaces everything with a backup file, after you've downloaded a fresh backup and typed a word to confirm.
+- **Owns:** the `restore_backup` database function.
+- **Called by:** the Settings page, through `/api/backup/...`.
+- **If it fails:** a restore is one single database step, so a bad file changes nothing at all. It needs the server's secret key, so nothing in a browser can ever run it.
 
 ## 3. Traced flows
 
-The first two flows are real today. Anything marked *planned* will be corrected as that phase is built.
+These all describe what really happens today.
 
 ### "I mark my Study block as done"
 1. You tap **Done** on the phone.
@@ -211,6 +236,26 @@ The first two flows are real today. Anything marked *planned* will be corrected 
 4. Adding a trade first replays every trade by date, and refuses it if you'd be selling shares you didn't hold yet.
 5. Once the page is on screen, it asks for any price or rate that's out of date, so a slow source never holds the page up. The numbers update when the answer arrives, and today's portfolio value is saved for the history chart.
 
+### "It's Sunday evening"
+1. At about 21:00 Taipei time, Vercel Cron calls `/api/cron/weekly` with the secret.
+2. If this week has no written review yet, the app sends the Oracle the week's numbers and your answers, marked as information only, and saves what comes back. Money isn't included. If the Oracle is down, this step is skipped.
+3. The app records that this week's push was sent, then sends it to each device that turned notifications on. A device the push service says is gone is forgotten.
+4. Your phone shows it, even with the app closed. Tapping it opens the review.
+
+### "I check off a block with no connection"
+1. When you opened the app earlier, the service worker saved the Loop page and every file it needs.
+2. With no connection, the browser asks for the Loop and the service worker hands over the saved copy.
+3. You tap Done. The app sees there's no connection, saves the check-off in this device's storage, and marks the block "Saved on this device".
+4. When the connection returns, the app sends each waiting check-off through the normal server rules, then refreshes.
+5. If a rule now refuses one, such as that day having closed, you're told which block and why.
+
+### "I restore a backup"
+1. The Restore button stays hidden until you've downloaded a backup of what's there now.
+2. The browser checks the file looks like a backup, shows how many records it holds, and waits for you to type the word.
+3. The file is compressed in the browser, since the free host accepts 4.5 MB per request, and backups shrink to about a tenth.
+4. The server unpacks it, checks you're signed in, and calls `restore_backup` using the secret key.
+5. That function deletes your rows and inserts the file's in one transaction, meaning all of it happens or none of it does. Every row is put under your account, whatever the file claims.
+
 ## 4. Security explained simply
 
 Each layer stops something different, so one failure doesn't expose everything. "Built" means it exists and has tests. Google sign-in and the hook still need a real test once your accounts exist.
@@ -231,12 +276,21 @@ Each layer stops something different, so one failure doesn't expose everything. 
     - `Permissions-Policy` turns off device features the app doesn't use.
 11. **Audit log (built).** An append-only record of closeouts and corrections, with AI actions, approvals and undos joining in Phase 4. Even you can't edit or delete rows through the app, so the history can be trusted. The game ledger follows the same rule. Viewing it in Settings arrives with Phase 4.
 12. **No personal data in logs (built).** Error paths log nothing personal, because hosted logs are outside the protections above.
-13. **Backup (planned, Phase 7).** JSON and CSV export with JSON restore, so a mistake or lost account doesn't mean lost data.
+13. **Backup (built).** JSON and CSV export with JSON restore, so a mistake or lost account doesn't mean lost data. The backup file holds everything, including Vault notes and money records, so keep it private. It leaves out your account id and the devices that receive notifications.
+14. **Offline stays small (built).** The service worker saves only the Loop page, because every other page holds private data with no need to work offline. Signing out clears it, and so does the login page.
+15. **Push addresses are checked (built).** The server only sends notifications to the big browsers' push services, so a bad address can't make it call anything else.
 
 ### Preview mode
 `AUTH_PREVIEW=true` shows the app without a login, so it can be tested before accounts exist. Your data isn't involved: screens use a temporary in-memory store that disappears when the server stops, and a scripted stand-in plays the AI. A preview-only route, `/api/dev/preview-seed`, resets that store so tests can reach things that normally depend on a real midnight. Both only work outside production builds, and tests prove a production build ignores them.
 
 ## 5. Key design choices
+
+- **The Home dragon is part of the painting, and still moves.** A painted-in dragon can't move on its own, so soft-edged copies of its parts lie exactly over the picture and move a little. Their outlines are in `src/config/lobby-art.ts`, which both the art script and the page read, so they can't disagree. A new painting needs new outlines.
+- **Art effects are baked in, not live.** Cutting those copies, and tinting the Oracle's dragon, happens in `scripts/prepare-art.mjs`. Doing it live would make a phone redo that work on every frame.
+- **Only one-off events earn XP.** The spec says so, and it keeps the game honest: a repeating event would create blocks nobody planned in their Loop. To earn XP from something weekly, it belongs in the template.
+- **Repeat rules use the calendar world's own format.** Called RRULE, it's what Google Calendar and others use, so `.ics` files keep their repeats. The app accepts daily or slower rules only, because more frequent ones would flood the calendar and some never-matching rules take seconds to reject. The rule library stays on the server, so it adds nothing to what your phone downloads.
+- **Restore replaces, it doesn't merge.** Merging two histories of a game with a ledger could produce a total neither of them had. This was the owner's decision.
+- **The timer's secret isn't in a migration.** Migrations are public on GitHub. `supabase/timers/notify-timer.sql` has a placeholder instead, and the real value goes into Supabase Vault, which is a Supabase feature unrelated to the app's own Vault.
 
 - **Dark and private means dynamic.** Every page is rendered fresh per request, because each needs a new CSP nonce and a session check. Next's `cacheComponents` is off for that reason.
 - **Chinese fonts come from Google at runtime.** Self-hosting them meant about 240 font files on every build. They load only in Chinese, and only after the page appears, so a slow connection to Google can't hold the page back. The device's built-in Chinese font shows until they arrive.

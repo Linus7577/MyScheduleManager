@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { TIERS, WARRIOR_ART_BY_TIER, WARRIOR_EYES_BY_ART } from "@/config/game.config";
+import { layerBox, PAINTING_GLOWS, PAINTING_LAYERS, PAINTING_SIZE } from "@/config/lobby-art";
 import { VOICE_CLIPS_READY, VOICE_PRONUNCIATION, VOICE_SCRIPT } from "@/config/voice-lines";
 import { firstLine, moodFor, nextBlock, pickLine, WARRIOR_LINES, type LineMood } from "@/features/game/lines";
 
@@ -135,8 +136,31 @@ describe("his lines and art", () => {
     }
   });
 
+  it("has a file for every moving part of the painting, each inside the painting", () => {
+    for (const layer of PAINTING_LAYERS) {
+      expect(readFileSync(`public/art/home/layer-${layer.id}.webp`).length, layer.id).toBeLessThan(40 * 1024);
+      const box = layerBox(layer.points);
+      expect(box.left, layer.id).toBeGreaterThanOrEqual(0);
+      expect(box.top, layer.id).toBeGreaterThanOrEqual(0);
+      expect(box.left + box.width, layer.id).toBeLessThanOrEqual(PAINTING_SIZE.width);
+      expect(box.top + box.height, layer.id).toBeLessThanOrEqual(PAINTING_SIZE.height);
+    }
+  });
+
+  it("puts the eyes and throat inside the head, so they move with it", () => {
+    const head = PAINTING_LAYERS.find((layer) => layer.id === "head");
+    if (!head) throw new Error("The head is missing");
+    const box = layerBox(head.points);
+    for (const [x, y] of [...PAINTING_GLOWS.eyes, PAINTING_GLOWS.maw]) {
+      expect(x).toBeGreaterThan(box.left);
+      expect(x).toBeLessThan(box.left + box.width);
+      expect(y).toBeGreaterThan(box.top);
+      expect(y).toBeLessThan(box.top + box.height);
+    }
+  });
+
   it("keeps the art light enough for a phone", () => {
-    for (const file of ["public/art/home/citadel.webp", "public/art/home/dragon.webp", "public/art/warrior/tier-6.webp"]) {
+    for (const file of ["public/art/home/citadel.webp", "public/art/home/painting.webp", "public/art/oracle/dragon.webp", "public/art/warrior/tier-6.webp"]) {
       expect(readFileSync(file).length, file).toBeLessThan(200 * 1024);
     }
   });

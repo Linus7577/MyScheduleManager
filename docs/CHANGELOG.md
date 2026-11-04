@@ -1,5 +1,21 @@
 # Changelog
 
+## What changed in Phase 7: Rituals & Polish
+
+- **Calendar:** events can repeat daily, weekly, monthly or by a custom rule, and one date can be taken out of a series. One-off events can be dragged to a new time or resized. There's search, jump to date, and `.ics` import and export. Importing the same file twice adds nothing.
+- **Weekly review:** a new page under More, with each week's numbers, the Oracle's written review, your three answers, and a way to ask the Oracle for changes to next week's loop.
+- **Notifications:** real pushes. The Sunday review is on by default, and block start, open blocks near midnight and low Power can be turned on in Settings, where there's also a guide to installing the app on Android.
+- **Offline:** today's Loop opens with no connection. Check-offs made offline wait on the device and are sent when you're back.
+- **Backup:** download everything as JSON, or money as CSV. Restore replaces everything, or changes nothing if the file has a problem.
+- **Home:** a new painting from the owner has the crimson dragon painted into the sky, coming at you with jaws open and claws out, and its tail in view. Its wings beat and its claws flex, and its eyes and throat glow. The warrior stands in front, brighter and sharper, off to one side.
+- **The Oracle is now the dragon:** the earlier standing dragon moved there. It stands behind the chat and moves, its face is beside the Oracle's name, and the Oracle now knows it's a dragon.
+- **Polish:** a short dark fade between pages, and a read-only list of categories and weights in Settings, which the spec asked for and was missing. The sealed-hall card on More is gone, because nothing is sealed any more.
+- **Dropped by the owner:** uploading avatar images. New art is sent to Claude Code and added to the app.
+- **New database file:** `20261104010000_rituals.sql`. Separately, `supabase/timers/notify-timer.sql` runs once by hand, because it holds a secret.
+- **New libraries:** `rrule` for repeating events, and `web-push` for sending notifications. Both run only on the server, so they add nothing to what your phone downloads.
+- **Art still to come:** Tiers 5, 7 and 8 borrow nearby art. Tiers 1 and 2 still need a helmet or mask. Each section has a recolored citadel rather than its own painting and layout.
+- **Known limits:** a repeating event is edited as a whole series, and can't be dragged. Blocks in your Loop aren't included in `.ics` exports. Offline, the Loop shows what it was when you last opened the app online. Imported events are always plain, with no XP.
+
 ## Game look, first release (before Phase 7)
 
 - **Home is now a full-screen game lobby:** a blood moon over a gothic citadel, with a dragon behind and the warrior in front. The dragon breathes and beats its wings, and lightning strikes now and then.

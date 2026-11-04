@@ -232,6 +232,26 @@
   box-shadow: inset 0 0 120px 30px rgb(220 20 60 / 45%);
 }
 
+.page-veil {
+  display: none;
+}
+
+[data-motion="full"] .page-veil {
+  display: block;
+  background: #0a0a0c;
+  opacity: 0;
+  animation: page-veil 240ms ease-out;
+}
+
+@keyframes page-veil {
+  from {
+    opacity: 0.65;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 [data-motion="full"] .avatar-breathe {
   transform-origin: center bottom;
   animation: avatar-breathe 2s ease-in-out infinite alternate;
@@ -330,14 +350,118 @@
   transition-duration: 60ms;
 }
 
+/* The Oracle's lair: the dragon stands behind the words, with the air darkening so they stay easy to read. */
+.oracle-dragon {
+  top: 7%;
+  left: 50%;
+  height: 112%;
+}
+
+/* Deeper, so it reads as a presence in the dark rather than a picture placed on top. Set on each image, which never changes. */
+.oracle-dragon img {
+  filter: brightness(0.82) saturate(1.15);
+}
+
+.oracle-veil {
+  background: linear-gradient(180deg, rgb(10 10 12 / 10%), rgb(10 10 12 / 45%) 45%, rgb(10 10 12 / 80%));
+}
+
+@media (min-width: 48rem) {
+  .oracle-dragon {
+    top: 3%;
+    height: 118%;
+  }
+}
+
 .lobby-foot-fog {
   pointer-events: none;
   background: linear-gradient(0deg, rgb(4 2 3 / 92%) 8%, rgb(4 2 3 / 45%) 38%, transparent);
 }
 
+/*
+ * The composition. The painting fills the scene, with the dragon coming at us out of the sky, and the warrior stands
+ * in front, off to one side, so its claws and tail stay in view. It follows the scene's shape rather than the screen's
+ * width, so a tablet held upright gets the tall layout. There, the painting sits at the top and the ground carries on below.
+ */
+.lobby {
+  container-type: size;
+  background: #040203;
+}
+
+.lobby-painting {
+  top: 0;
+  left: 50%;
+  width: max(100cqw, calc(72cqh * 1024 / 572));
+  aspect-ratio: 1024 / 572;
+}
+
+.lobby-painting::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 22%;
+  background: linear-gradient(0deg, #040203, transparent);
+}
+
 .lobby-warrior {
+  bottom: -5%;
+  left: 32%;
+  height: 56%;
   cursor: pointer;
   transition: filter 300ms ease;
+}
+
+@container (min-aspect-ratio: 1/1) {
+  .lobby-painting {
+    width: max(100cqw, calc(100cqh * 1024 / 572));
+  }
+
+  .lobby-warrior {
+    bottom: -8%;
+    left: 83%;
+    height: 92%;
+  }
+}
+
+/* The warrior is the sharp, bright thing in the scene, and a pool of shadow lifts him off the painting behind. */
+.lobby-warrior::before {
+  content: "";
+  position: absolute;
+  inset: -6% -14% -2%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgb(8 2 5 / 58%), rgb(8 2 5 / 28%) 55%, transparent);
+}
+
+.lobby-warrior img {
+  --tw-brightness: brightness(1.14);
+  --tw-contrast: contrast(1.08);
+}
+
+/* A still picture needs no moving copies of itself. */
+.painted-layer {
+  display: none;
+}
+
+[data-motion="full"] .painted-layer {
+  display: block;
+}
+
+.painted-eye,
+.painted-maw {
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.painted-eye {
+  width: 3.6%;
+  background: radial-gradient(closest-side, rgb(255 205 170 / 85%), rgb(255 70 25 / 55%) 50%, transparent);
+}
+
+.painted-maw {
+  width: 22%;
+  background: radial-gradient(closest-side, rgb(255 130 50 / 55%), transparent);
 }
 
 .lobby-warrior-speaking {
@@ -356,16 +480,35 @@
 }
 
 .dragon-body {
-  clip-path: polygon(29% 0, 71% 0, 71% 33%, 78% 38%, 79% 40%, 80% 54%, 85% 62%, 85% 100%, 18% 100%, 18% 60%, 14% 52%, 13% 39%, 22% 38%, 29% 30%);
+  clip-path: polygon(29% 14%, 38% 18%, 40% 23%, 54% 23%, 56% 20%, 71% 14%, 71% 33%, 78% 38%, 79% 40%, 80% 54%, 85% 62%, 85% 100%, 18% 100%, 18% 60%, 14% 52%, 13% 37%, 22% 35%, 29% 28%);
+}
+
+/* Shares its lower edge with the body, a little past it, so the neck never shows a gap as the head turns. */
+.dragon-head {
+  clip-path: polygon(29% 0, 71% 0, 71% 14%, 56% 20%, 54% 25%, 40% 25%, 38% 18%, 29% 14%);
+}
+
+.dragon-head-sway {
+  transform-origin: 46% 27%;
 }
 
 .dragon-eye {
-  top: 5%;
-  left: 44%;
-  width: 3%;
+  top: 6.15%;
+  left: 45.2%;
+  width: 1.3%;
   aspect-ratio: 1;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(closest-side, #ffd0b0, #ff6a2b 45%, transparent);
+  background: radial-gradient(closest-side, #ffd9c0, #ff5a22 45%, transparent);
+}
+
+.dragon-maw {
+  top: 7.5%;
+  left: 41%;
+  width: 10%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgb(255 90 30 / 38%), transparent);
 }
 
 .dragon-veins {
@@ -455,6 +598,76 @@
   }
 }
 
+@keyframes dragon-head-sway {
+  0%,
+  100% {
+    transform: rotate(-1.4deg);
+  }
+  50% {
+    transform: rotate(1.4deg);
+  }
+}
+
+@keyframes painted-wing-left {
+  0%,
+  100% {
+    transform: rotate(-0.8deg);
+  }
+  50% {
+    transform: rotate(1.4deg);
+  }
+}
+
+@keyframes painted-wing-right {
+  0%,
+  100% {
+    transform: rotate(0.8deg);
+  }
+  50% {
+    transform: rotate(-1.4deg);
+  }
+}
+
+@keyframes painted-body {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.018);
+  }
+}
+
+@keyframes painted-claw-left {
+  0%,
+  100% {
+    transform: rotate(-0.9deg);
+  }
+  50% {
+    transform: rotate(1.3deg) translateY(1%);
+  }
+}
+
+@keyframes painted-claw-right {
+  0%,
+  100% {
+    transform: rotate(0.9deg);
+  }
+  50% {
+    transform: rotate(-1.3deg) translateY(1%);
+  }
+}
+
+@keyframes painted-head {
+  0%,
+  100% {
+    transform: rotate(-0.5deg) scale(1);
+  }
+  50% {
+    transform: rotate(0.5deg) scale(1.032) translateY(0.6%);
+  }
+}
+
 @keyframes glow-pulse {
   0%,
   100% {
@@ -506,6 +719,37 @@
   animation: wing-right 7s ease-in-out infinite;
 }
 
+[data-motion="full"] .dragon-head-sway {
+  animation: dragon-head-sway 11s ease-in-out infinite;
+}
+
+[data-motion="full"] .painted-wing-left {
+  animation: painted-wing-left 7s ease-in-out infinite;
+}
+
+[data-motion="full"] .painted-wing-right {
+  animation: painted-wing-right 7s ease-in-out infinite;
+}
+
+[data-motion="full"] .painted-body {
+  animation: painted-body 7s ease-in-out infinite;
+}
+
+[data-motion="full"] .painted-claw-left {
+  animation: painted-claw-left 9s ease-in-out infinite;
+}
+
+[data-motion="full"] .painted-claw-right {
+  animation: painted-claw-right 9s ease-in-out -2s infinite;
+}
+
+[data-motion="full"] .painted-head {
+  animation: painted-head 7s ease-in-out infinite;
+}
+
+[data-motion="full"] .painted-eye,
+[data-motion="full"] .painted-maw,
+[data-motion="full"] .dragon-maw,
 [data-motion="full"] .dragon-eye,
 [data-motion="full"] .dragon-veins {
   animation: glow-pulse 7s ease-in-out infinite;

@@ -16,6 +16,10 @@ function dayNumber(date: string): number {
   return Math.floor(Date.parse(`${date}T00:00:00Z`) / MS_PER_DAY);
 }
 
+export function daysBetween(from: string, to: string): number {
+  return dayNumber(to) - dayNumber(from);
+}
+
 export function addDays(date: string, days: number): string {
   return new Date((dayNumber(date) + days) * MS_PER_DAY).toISOString().slice(0, 10);
 }
@@ -173,19 +177,47 @@ export function canUndoRestDay(day: RestDay, today: string): boolean {
 }
 
 /**
- * A productive event earns XP like a block, so it needs a real duration on one date.
- * All-day and multi-day events are only allowed for the "other" category.
+ * Only a one-off event earns XP like a block. A repeating event stays on the calendar, whatever its category.
+ */
+export function earnsXp(event: EventFields): boolean {
+  return !event.rrule && isProductive(event.category);
+}
+
+/**
+ * An event that earns XP needs a real duration on one date.
+ * All-day and multi-day events are only allowed for events that don't.
  */
 export function checkEvent(event: EventFields): ScheduleErrorCode | null {
   if (event.end_date < event.start_date) return "eventEndBeforeStart";
   if (event.all_day) {
     if (event.start_time !== null || event.end_time !== null) return "invalid";
-    return isProductive(event.category) ? "eventProductiveTimed" : null;
+    return earnsXp(event) ? "eventProductiveTimed" : null;
   }
   if (event.start_time === null || event.end_time === null) return "invalid";
   if (event.start_date === event.end_date && toMinutes(event.end_time) <= toMinutes(event.start_time)) {
     return "eventEndBeforeStart";
   }
-  if (isProductive(event.category) && event.start_date !== event.end_date) return "eventProductiveTimed";
+  if (earnsXp(event) && event.start_date !== event.end_date) return "eventProductiveTimed";
   return null;
+}
+
+/** The event's new dates and times after it was dragged or resized on the calendar. */
+export function movedEventFields(
+  event: EventFields,
+  start: string,
+  end: string | null,
+  allDay: boolean
+): EventFields {
+  const { title, notes, category, rrule } = event;
+  const startDate = start.slice(0, 10);
+  if (allDay) {
+    // The calendar's all-day end is the day after the last one.
+    const endDate = end ? addDays(end.slice(0, 10), -1) : startDate;
+    return { title, notes, category, rrule, all_day: true, start_date: startDate, end_date: endDate, start_time: null, end_time: null };
+  }
+  const startTime = start.slice(11, 16);
+  const [endDate, endTime] = end
+    ? [end.slice(0, 10), end.slice(11, 16)]
+    : [startDate, `${String(Math.min(Number(startTime.slice(0, 2)) + 1, 23)).padStart(2, "0")}:${startTime.slice(3)}`];
+  return { title, notes, category, rrule, all_day: false, start_date: startDate, end_date: endDate, start_time: startTime, end_time: endTime };
 }

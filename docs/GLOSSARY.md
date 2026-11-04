@@ -4,6 +4,7 @@ Short definitions of terms you'll meet in this project.
 
 | Term | Meaning |
 |---|---|
+| **.ics file** | The standard file format for calendars. Google Calendar, Apple Calendar and Outlook can all read and write it. |
 | **allowlist** | The list of who may enter. Here, one Google account. |
 | **anon key / service_role key** | Supabase's older key names, being retired by the end of 2026. Replaced by the publishable and secret keys. |
 | **API route / route handler** | A server URL that returns data rather than a page, such as the cron endpoint. |
@@ -53,18 +54,26 @@ Short definitions of terms you'll meet in this project.
 | **prompt injection** | Text hidden in data, like a note saying "ignore your rules", that tries to give an AI orders. This is why notes are fenced off as data. |
 | **Reckoning** | The screen summarizing what closeout did, shown on your first open after one. Also the name of closeout itself. |
 | **repository (repo)** | The one piece of code that talks to storage for a feature. Swapping it swaps where data lives. (Different from a GitHub repo, which holds the code.) |
+| **pg_cron / pg_net** | Two free Postgres add-ons. One runs something on a timer, and the other lets the database call a web address. Together they're the five-minute clock behind the optional notifications. |
+| **push service** | A company's server that delivers notifications to a browser, even when the app is closed. Google's does this for Chrome. |
 | **Rest Day** | A planned day off, 1 per week, declared before the day starts. Blocks become "rest": no XP, no loss. |
+| **restore** | Replacing everything in the app with what's in a backup file. All of it happens, or none of it does. |
+| **RRULE** | The calendar world's standard wording for how something repeats, such as `FREQ=WEEKLY;BYDAY=MO,WE` for every Monday and Wednesday. |
 | **RLS (Row Level Security)** | Rules inside the database that decide which rows each user can touch. |
-| **secret key** | The powerful Supabase key (`sb_secret_...`) that bypasses RLS. Server only, used only by cron. |
+| **secret key** | The powerful Supabase key (`sb_secret_...`) that bypasses RLS. Server only, used only by timers and restoring a backup. |
 | **section (Vault)** | A top-level shelf in the Vault, such as Courses. Every item sits in exactly one. Tags are looser labels, and an item can have several. |
 | **server action** | A server function the page can call directly, used for saving data. |
 | **server component** | UI code that runs only on the server. Its logic and secrets never reach the browser. |
 | **snapshot** | A saved copy of a progress number for one day. Charts are drawn from these, since the live number only knows today. |
-| **service worker** | A background script in the browser, used for push and offline. Arrives in Phase 7. |
+| **service worker** | A background script the browser keeps for this site. It's what shows notifications with the app closed, and hands over the saved Loop with no connection. |
 | **shadcn/ui** | A set of UI components copied into this project, so we can restyle them freely. |
 | **Shield** | A sick or emergency day, up to 3 per calendar month, which can be declared the same day. Works like a Rest Day. |
 | **Tailwind** | A CSS system where you style with small classes. Our colours are defined in `globals.css`. |
 | **template** | One version of your repeating week, such as Semester or Exam Week. Its blocks are the plan, not the real schedule. |
+| **streaming** | Sending a response a piece at a time as it's made. It lets a backup be bigger than the 4.5 MB the free host allows for a finished response. |
+| **Supabase Vault** | Supabase's encrypted store for secrets. Nothing to do with this app's own Vault section. |
+| **transaction (database)** | A group of changes that all happen, or none do. Not the same as a money transaction in the Treasury. |
+| **VAPID keys** | A pair of keys that identify this app to push services, so only it can send you notifications. The public one is meant to be seen, and the private one stays on the server. |
 | **wall-clock time** | A time as read off a clock, like 09:00, with no timezone attached. Blocks are stored this way. |
 | **token** | The unit AI services count text in, about 4 English characters. Free tiers limit tokens per minute. |
 | **TWSE / TPEx** | Taiwan's two stock exchanges. Their free official data gives each day's closing prices, not live ones. |

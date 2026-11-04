@@ -51,9 +51,20 @@ export type EventFields = {
   end_date: string;
   start_time: string | null;
   end_time: string | null;
+  /** How the event repeats, in the calendar standard's own wording. Empty for a one-off event. */
+  rrule?: string | null;
 };
 
-export type CalendarEvent = EventFields & { id: string };
+export type CalendarEvent = EventFields & {
+  id: string;
+  rrule: string | null;
+  /** Single dates taken out of a repeating event. */
+  exdates: string[];
+  /** The id an imported event had in its calendar file. */
+  ics_uid: string | null;
+};
+
+export type ImportedEvent = EventFields & { rrule: string | null; exdates: string[]; ics_uid: string | null };
 
 export type ScheduleErrorCode =
   | "invalid"
@@ -70,6 +81,12 @@ export type ScheduleErrorCode =
   | "templateInUse"
   | "effectiveInPast"
   | "eventProductiveTimed"
+  | "badRepeat"
+  | "badCalendarFile"
+  | "fileTooLarge"
+  | "pushNotSent"
+  | "badBackupFile"
+  | "restoreFailed"
   | "eventEndBeforeStart"
   | "eventLinked"
   | "notCancellable"

@@ -1,3 +1,4 @@
+import type { WeeklyAnswers } from "@/features/review/types";
 import type { AuditEntry } from "@/features/game/types";
 import type {
   LoggedAudit,
@@ -35,6 +36,8 @@ export interface OracleRepo {
 
   getWeeklyReview(weekStart: string): Promise<string | null>;
   saveWeeklyReview(weekStart: string, text: string | null): Promise<void>;
+  getWeeklyAnswers(weekStart: string): Promise<WeeklyAnswers>;
+  saveWeeklyAnswers(weekStart: string, answers: WeeklyAnswers): Promise<void>;
 
   addAudit(entry: AuditEntry): Promise<void>;
   listAudit(limit: number): Promise<LoggedAudit[]>;

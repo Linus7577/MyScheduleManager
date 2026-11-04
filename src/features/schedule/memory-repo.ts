@@ -14,6 +14,9 @@ import { createFinanceMemoryRepo, emptyFinanceStore, type FinanceStore } from "@
 import { clearVaultLinks, createVaultMemoryRepo, emptyVaultStore, type VaultStore } from "@/features/vault/memory-repo";
 import type { AuditEntry, ClosedDay, DailySummary, GameState, LedgerEntry } from "@/features/game/types";
 import type { LoggedAudit, OracleAction, OracleMessage, Proposal, Suggestion } from "@/features/oracle/types";
+import type { BackupTable } from "@/features/backup/logic";
+import { createNotificationMemoryRepo, emptyNotificationStore, type NotificationStore } from "@/features/notifications/memory-repo";
+import { EMPTY_ANSWERS, type WeeklyAnswers } from "@/features/review/types";
 import type { AppRepo } from "./generation";
 import type {
   BlockInstance,
@@ -51,12 +54,47 @@ type Store = {
   actions: OracleAction[];
   suggestions: Suggestion[];
   rateWindow: { minute: number; count: number };
+  notifications: NotificationStore;
   reviews: Record<string, string>;
+  reviewAnswers: Record<string, WeeklyAnswers>;
   loggedAudit: LoggedAudit[];
   aboutMe: string;
   finance: FinanceStore;
   vault: VaultStore;
 };
+
+type Rows = Record<string, unknown>[];
+type MemoryTable = { get: () => Rows; set: (rows: Rows) => void };
+
+/** Preview mode has no database, so a backup holds what its store keeps as plain lists. Enough to try the screens. */
+function memoryTables(store: Store): Partial<Record<BackupTable, MemoryTable>> {
+  const table = <K extends string, T extends Record<K, unknown>>(holder: T, key: K): MemoryTable => ({
+    get: () => holder[key] as Rows,
+    set: (rows) => {
+      (holder as Record<string, unknown>)[key] = rows;
+    },
+  });
+  return {
+    loop_templates: table(store, "templates"),
+    template_activations: table(store, "activations"),
+    template_blocks: table(store, "blocks"),
+    block_instances: table(store, "instances"),
+    rest_days: table(store, "restDays"),
+    events: table(store, "events"),
+    goals: table(store, "goals"),
+    projects: table(store, "projects"),
+    tasks: table(store, "tasks"),
+    learning_tracks: table(store, "tracks"),
+    learning_units: table(store, "units"),
+    habits: table(store, "habits"),
+    habit_checkins: table(store, "checkins"),
+    transactions: table(store.finance, "transactions"),
+    fin_categories: table(store.finance, "finCategories"),
+    trades: table(store.finance, "trades"),
+    vault_sections: table(store.vault, "sections"),
+    vault_items: table(store.vault, "items"),
+  };
+}
 
 const emptyStore = (): Store => ({
   templates: [],
@@ -85,7 +123,9 @@ const emptyStore = (): Store => ({
   actions: [],
   suggestions: [],
   rateWindow: { minute: 0, count: 0 },
+  notifications: emptyNotificationStore(),
   reviews: {},
+  reviewAnswers: {},
   loggedAudit: [],
   aboutMe: "",
   finance: emptyFinanceStore(),
@@ -104,6 +144,15 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
   return {
     ...createFinanceMemoryRepo(store.finance),
     ...createVaultMemoryRepo(store.vault),
+    ...createNotificationMemoryRepo(store.notifications),
+
+    async readBackupRows(table, from, to) {
+      return memoryTables(store)[table]?.get().slice(from, to + 1) ?? [];
+    },
+    async restoreBackup(backup) {
+      const tables = memoryTables(store);
+      for (const [table, rows] of Object.entries(backup.tables)) tables[table as BackupTable]?.set(rows ?? []);
+    },
 
     async getLatestConversationId() {
       return store.conversations.at(-1) ?? null;
@@ -174,6 +223,12 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
     async saveWeeklyReview(weekStart, text) {
       if (text === null) delete store.reviews[weekStart];
       else store.reviews[weekStart] = text;
+    },
+    async getWeeklyAnswers(weekStart) {
+      return store.reviewAnswers[weekStart] ?? EMPTY_ANSWERS;
+    },
+    async saveWeeklyAnswers(weekStart, answers) {
+      store.reviewAnswers[weekStart] = answers;
     },
 
     async addAudit(entry) {
@@ -380,6 +435,9 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
     async listLedgerForBlocks(blockIds) {
       return store.ledger.filter((entry) => entry.block_instance_id && blockIds.includes(entry.block_instance_id));
     },
+    async listLedgerBetween(from, to) {
+      return store.ledger.filter((entry) => entry.date >= from && entry.date <= to);
+    },
     async listAllLedger() {
       return [...store.ledger];
     },
@@ -525,13 +583,13 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
     },
 
     async listEvents(from, to) {
-      return store.events.filter((e) => e.start_date <= to && e.end_date >= from);
+      return store.events.filter((e) => e.start_date <= to && (e.end_date >= from || e.rrule));
     },
     async getEvent(id) {
       return store.events.find((e) => e.id === id) ?? null;
     },
     async createEvent(event) {
-      const created = { ...event, id: newId() };
+      const created: CalendarEvent = { ...event, rrule: event.rrule ?? null, exdates: [], ics_uid: null, id: newId() };
       store.events.push(created);
       return created;
     },
@@ -541,6 +599,25 @@ export function createMemoryRepo(store: Store = emptyStore()): AppRepo {
     async deleteEvent(id) {
       store.events = store.events.filter((e) => e.id !== id);
       store.instances = store.instances.filter((i) => i.event_id !== id);
+    },
+    async importEvents(events) {
+      store.events.push(...events.map((event) => ({ ...event, id: newId() })));
+    },
+    async listAllEvents() {
+      return [...store.events];
+    },
+    async searchEvents(query, limit) {
+      const text = query.toLowerCase();
+      return store.events
+        .filter((e) => e.title.toLowerCase().includes(text) || e.notes.toLowerCase().includes(text))
+        .slice(0, limit);
+    },
+    async searchInstances(query, limit) {
+      const text = query.toLowerCase();
+      return store.instances
+        .filter((i) => !i.is_cancelled && i.title.toLowerCase().includes(text))
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, limit);
     },
   };
 }

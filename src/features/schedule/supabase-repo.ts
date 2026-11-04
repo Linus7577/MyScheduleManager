@@ -5,6 +5,9 @@ import { createFinanceSupabaseRepo } from "@/features/finance/supabase-repo";
 import { createVaultSupabaseRepo } from "@/features/vault/supabase-repo";
 import type { DailySummary, GameState, LedgerEntry } from "@/features/game/types";
 import type { OracleAction, OracleMessage, Proposal } from "@/features/oracle/types";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createNotificationSupabaseRepo } from "@/features/notifications/supabase-repo";
+import { EMPTY_ANSWERS, type WeeklyAnswers } from "@/features/review/types";
 import type { AppRepo } from "./generation";
 import type { BlockInstance, CalendarEvent, TemplateBlock } from "./types";
 
@@ -38,6 +41,9 @@ const toInstance = (row: BlockInstance): BlockInstance => ({
   end_time: shortTime(row.end_time),
 });
 
+/** Matches text anywhere, with the search's own wildcard characters treated as plain text. */
+const containsPattern = (query: string) => `%${query.replace(/[\\%_]/g, "\\$&")}%`;
+
 const toEvent = (row: CalendarEvent): CalendarEvent => ({
   ...row,
   start_time: row.start_time && shortTime(row.start_time),
@@ -68,6 +74,19 @@ export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo 
   return {
     ...createFinanceSupabaseRepo(db, userId),
     ...createVaultSupabaseRepo(db, userId),
+    ...createNotificationSupabaseRepo(db, userId),
+
+    async readBackupRows(table, from, to) {
+      return unwrap(
+        await db.from(table).select("*").eq("user_id", userId).order("id").range(from, to)
+      ) as Record<string, unknown>[];
+    },
+    async restoreBackup(backup) {
+      // Only the server-side key may run this, so nothing in a browser can ever reach it, whatever else goes wrong.
+      const admin = createSupabaseAdminClient();
+      if (!admin) throw new Error("The server has no secret key");
+      check(await admin.rpc("restore_backup", { owner_id: userId, backup }));
+    },
 
     async getLatestConversationId() {
       const row = unwrapMaybe(
@@ -162,6 +181,20 @@ export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo 
         await db
           .from("weekly_reviews")
           .upsert({ user_id: userId, week_start: weekStart, oracle_text: text }, { onConflict: "user_id,week_start" })
+      );
+    },
+
+    async getWeeklyAnswers(weekStart) {
+      const row = unwrapMaybe(
+        await db.from("weekly_reviews").select("worked, didnt, focus").eq("week_start", weekStart).maybeSingle()
+      );
+      return (row as WeeklyAnswers | null) ?? EMPTY_ANSWERS;
+    },
+    async saveWeeklyAnswers(weekStart, answers) {
+      check(
+        await db
+          .from("weekly_reviews")
+          .upsert({ user_id: userId, week_start: weekStart, ...answers }, { onConflict: "user_id,week_start" })
       );
     },
 
@@ -381,6 +414,12 @@ export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo 
       ) as unknown as LedgerEntry[];
       return rows.map(toLedgerEntry);
     },
+    async listLedgerBetween(from, to) {
+      const rows = unwrap(
+        await db.from("game_ledger").select(LEDGER_COLUMNS).gte("date", from).lte("date", to).order("created_at")
+      ) as unknown as LedgerEntry[];
+      return rows.map(toLedgerEntry);
+    },
     async listAllLedger() {
       const rows = unwrap(
         await db.from("game_ledger").select(LEDGER_COLUMNS).order("created_at")
@@ -560,7 +599,12 @@ export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo 
 
     async listEvents(from, to) {
       const rows = unwrap(
-        await db.from("events").select("*").lte("start_date", to).gte("end_date", from).order("start_date")
+        await db
+          .from("events")
+          .select("*")
+          .lte("start_date", to)
+          .or(`end_date.gte.${from},rrule.not.is.null`)
+          .order("start_date")
       ) as CalendarEvent[];
       return rows.map(toEvent);
     },
@@ -579,6 +623,35 @@ export function createSupabaseRepo(db: SupabaseClient, userId: string): AppRepo 
     },
     async deleteEvent(id) {
       check(await db.from("events").delete().eq("id", id));
+    },
+    async importEvents(events) {
+      if (events.length === 0) return;
+      check(await db.from("events").insert(events.map((event) => ({ ...event, user_id: userId }))));
+    },
+    async listAllEvents() {
+      const rows = unwrap(await db.from("events").select("*").order("start_date")) as CalendarEvent[];
+      return rows.map(toEvent);
+    },
+    async searchEvents(query, limit) {
+      const pattern = containsPattern(query);
+      const [titles, notes] = await Promise.all([
+        db.from("events").select("*").ilike("title", pattern).order("start_date", { ascending: false }).limit(limit),
+        db.from("events").select("*").ilike("notes", pattern).order("start_date", { ascending: false }).limit(limit),
+      ]);
+      const rows = [...(unwrap(titles) as CalendarEvent[]), ...(unwrap(notes) as CalendarEvent[])];
+      return [...new Map(rows.map((row) => [row.id, toEvent(row)])).values()].slice(0, limit);
+    },
+    async searchInstances(query, limit) {
+      const rows = unwrap(
+        await db
+          .from("block_instances")
+          .select("*")
+          .eq("is_cancelled", false)
+          .ilike("title", containsPattern(query))
+          .order("date", { ascending: false })
+          .limit(limit)
+      ) as BlockInstance[];
+      return rows.map(toInstance);
     },
   };
 }

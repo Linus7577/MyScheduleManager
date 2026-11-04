@@ -1,3 +1,5 @@
+import type { BackupRepo } from "@/features/backup/repo";
+import type { NotificationRepo } from "@/features/notifications/repo";
 import type { CommandRepo } from "@/features/command/repo";
 import type { FinanceRepo } from "@/features/finance/repo";
 import type { VaultRepo } from "@/features/vault/repo";
@@ -6,7 +8,7 @@ import type { OracleRepo } from "@/features/oracle/repo";
 import { addDays, buildInstanceRows, generationEnd } from "./logic";
 import type { ScheduleRepo } from "./repo";
 
-export type AppRepo = ScheduleRepo & GameRepo & CommandRepo & OracleRepo & FinanceRepo & VaultRepo;
+export type AppRepo = ScheduleRepo & GameRepo & CommandRepo & OracleRepo & FinanceRepo & VaultRepo & NotificationRepo & BackupRepo;
 
 export type ScheduleContext = {
   repo: AppRepo;

@@ -9,6 +9,7 @@ import {
   idOnlySchema,
   logInstanceSchema,
   renameTemplateSchema,
+  skipOccurrenceSchema,
   switchTemplateSchema,
   templateNameSchema,
   updateBlockSchema,
@@ -82,4 +83,8 @@ export async function updateEventAction(input: unknown) {
 
 export async function deleteEventAction(input: unknown) {
   return run(idOnlySchema, input, (ctx, data) => service.deleteEvent(ctx, data.id));
+}
+
+export async function skipOccurrenceAction(input: unknown) {
+  return run(skipOccurrenceSchema, input, (ctx, data) => service.skipOccurrence(ctx, data.id, data.date));
 }

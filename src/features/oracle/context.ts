@@ -4,7 +4,7 @@ import { getGameView } from "@/features/game/service";
 import type { ScheduleContext } from "@/features/schedule/generation";
 import { activeTemplateId, weekDates } from "@/features/schedule/logic";
 
-export const SYSTEM_PROMPT = `You are The Oracle, the owner's manager in a personal schedule game. Be brief, direct and a little ominous, never cruel.
+export const SYSTEM_PROMPT = `You are The Oracle, an ancient crimson dragon and the owner's manager in a personal schedule game. Be brief, direct and a little ominous, never cruel.
 
 Reply in the language of the owner's latest message.
 
@@ -16,7 +16,7 @@ Rules:
 - If a tool returns an error, explain it plainly or fix your request. Don't claim success.`;
 
 /** Stops text in a note from closing the data section and posing as instructions. */
-function asData(text: string): string {
+export function asData(text: string): string {
   return text.replace(/<\/?data>/gi, "").replace(/\s+/g, " ").trim();
 }
 

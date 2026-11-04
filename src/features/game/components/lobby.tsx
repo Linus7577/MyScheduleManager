@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Flame, ShieldAlert, Swords, Volume2, VolumeX } from "lucide-react";
 import type { MotionLevel } from "@/config/app.config";
 import { LIGHTNING_GAP_SECONDS, type PowerState } from "@/config/game.config";
+import { layerBox, PAINTING_GLOWS, PAINTING_LAYERS, PAINTING_SIZE } from "@/config/lobby-art";
 import { cn } from "@/lib/utils";
 import { firstLine, pickLine, type LineId, type LineMood } from "../lines";
 import {
@@ -54,19 +55,48 @@ function SoundToggle() {
   );
 }
 
-/** The living painting: the same picture, with the wings cut out so they can beat slowly around the shoulders. */
-function Dragon() {
-  const art = "/art/home/dragon.webp";
-  const layer = "absolute inset-0 size-full select-none";
+const percent = (part: number, whole: number) => `${(part / whole) * 100}%`;
+
+/**
+ * The living painting. The dragon is part of the picture, so each moving part is a soft-edged copy lying exactly on top
+ * of it. They only load when they'll move, as they'd add nothing to a still picture.
+ */
+function Painting() {
+  const { width, height } = PAINTING_SIZE;
   return (
-    <div aria-hidden="true" className="lobby-dragon absolute top-[3%] left-1/2 aspect-[826/1100] h-[74%] -translate-x-1/2 md:left-[34%] md:h-[92%]">
-      <div className="dragon-breathe absolute inset-0">
-        <Image src={art} alt="" fill unoptimized priority draggable={false} className={cn(layer, "dragon-wing-left")} />
-        <Image src={art} alt="" fill unoptimized priority draggable={false} className={cn(layer, "dragon-wing-right")} />
-        <Image src={art} alt="" fill unoptimized priority draggable={false} className={cn(layer, "dragon-body")} />
-        <span className="dragon-veins absolute" />
-        <span className="dragon-eye absolute" />
-      </div>
+    <div aria-hidden="true" className="lobby-painting absolute -z-20 -translate-x-1/2">
+      <Image src="/art/home/painting.webp" alt="" fill unoptimized priority draggable={false} sizes="100vw" className="select-none" />
+      {PAINTING_LAYERS.map((layer) => {
+        const box = layerBox(layer.points);
+        const within = ([x, y]: readonly [number, number]) => ({
+          left: percent(x - box.left, box.width),
+          top: percent(y - box.top, box.height),
+        });
+        const pivot = within(layer.pivot);
+        return (
+          <div
+            key={layer.id}
+            className={cn("painted-layer absolute", `painted-${layer.id}`)}
+            style={{
+              left: percent(box.left, width),
+              top: percent(box.top, height),
+              width: percent(box.width, width),
+              height: percent(box.height, height),
+              transformOrigin: `${pivot.left} ${pivot.top}`,
+            }}
+          >
+            <Image src={`/art/home/layer-${layer.id}.webp`} alt="" fill unoptimized loading="lazy" draggable={false} className="select-none" />
+            {layer.id === "head" && (
+              <>
+                <span className="painted-maw absolute" style={within(PAINTING_GLOWS.maw)} />
+                {PAINTING_GLOWS.eyes.map((eye) => (
+                  <span key={eye[0]} className="painted-eye absolute" style={within(eye)} />
+                ))}
+              </>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -131,16 +161,7 @@ export function HomeLobby(props: {
       data-flash={flash}
       className="lobby relative isolate -mx-4 -mt-6 h-[calc(100dvh-8.5rem)] min-h-[36rem] overflow-hidden bg-black md:-mx-8 md:h-[calc(100dvh-4.75rem)]"
     >
-      <Image
-        src="/art/home/citadel.webp"
-        alt=""
-        fill
-        unoptimized
-        priority
-        draggable={false}
-        sizes="100vw"
-        className="-z-20 object-cover object-top select-none"
-      />
+      <Painting />
       <div aria-hidden="true" className="lobby-moon absolute -z-10" />
       <svg aria-hidden="true" viewBox="0 0 100 50" preserveAspectRatio="none" className="lobby-bolts absolute inset-x-0 top-0 -z-10 h-1/2 w-full">
         {BOLTS.map((bolt) => (
@@ -149,7 +170,6 @@ export function HomeLobby(props: {
       </svg>
       <div aria-hidden="true" className="lobby-flash absolute inset-0 -z-10" />
 
-      <Dragon />
       <div aria-hidden="true" className="fog-layer absolute inset-y-0 -inset-x-[10%]" />
       <ParticleCanvas
         mode="drift"
@@ -163,15 +183,12 @@ export function HomeLobby(props: {
         type="button"
         aria-label={t("speak")}
         onClick={speak}
-        className={cn(
-          "lobby-warrior absolute bottom-[9%] left-1/2 h-[76%] -translate-x-1/2 md:bottom-0 md:left-[58%] md:h-[96%]",
-          speaking && "lobby-warrior-speaking"
-        )}
+        className={cn("lobby-warrior absolute -translate-x-1/2", speaking && "lobby-warrior-speaking")}
       >
         <Warrior tier={props.tier} powerState={props.powerState} className="h-full" />
       </button>
 
-      <div aria-hidden="true" className="lobby-foot-fog absolute inset-x-0 bottom-0 h-1/2" />
+      <div aria-hidden="true" className="lobby-foot-fog absolute inset-x-0 bottom-0 h-[30%]" />
 
       <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2 md:inset-x-8">
         <div className="lobby-plate min-w-0 px-3 py-1.5">

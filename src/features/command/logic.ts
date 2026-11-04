@@ -128,7 +128,7 @@ export function heatmapWeeks(today: string, weeks: number): string[][] {
 
 /* Stats from blocks */
 
-const earnedShare = (status: string) => (status === "done" ? 1 : status === "partial" ? 0.5 : 0);
+export const earnedShare = (status: string) => (status === "done" ? 1 : status === "partial" ? 0.5 : 0);
 
 export type DayStat = { date: string; planned: number; done: number };
 
