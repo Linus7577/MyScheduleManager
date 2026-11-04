@@ -99,4 +99,7 @@ You don't need these yet. They're here so this file stays complete.
 - **Phase 7, VAPID keys:** these identify your app to the browser's push service, so only you can send it notifications. The exact command is added when that phase is built.
 
 ## Adding database changes later
-Each phase adds a new file in `supabase/migrations/`. Run each new file once in the SQL Editor, oldest first. **Why:** this keeps the live database matching the code.
+Each phase adds a new file in `supabase/migrations/`. Run each new file once in the SQL Editor, oldest first, **before** deploying the code that needs it. **Why:** this keeps the live database matching the code, and pages using a table that doesn't exist yet would fail.
+
+- **Check the project name at the top of the page first.** It should say `my-schedule-manager-tokyo`. An old project's name can look just as right, and a script run there does nothing for the app.
+- **If the app still can't find a new table,** run `notify pgrst, 'reload schema';` in the SQL Editor. **Why:** Supabase keeps a list of tables, and sometimes needs telling to refresh it.
