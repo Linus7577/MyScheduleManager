@@ -127,7 +127,7 @@ export function FocusTimer(props: { id: string; title: string; minutes: number; 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-bg p-4">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-bg p-4 eclipse-sky">
       <Link
         href="/loop"
         aria-label={t("leave")}

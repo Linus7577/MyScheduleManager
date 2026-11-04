@@ -47,7 +47,7 @@ export function PlaceName() {
         place === "observatory" ? "max-w-5xl" : "max-w-2xl"
       )}
     >
-      {t(place)}
+      <span>{t(place)}</span>
     </p>
   );
 }

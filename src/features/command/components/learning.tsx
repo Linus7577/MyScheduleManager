@@ -79,7 +79,7 @@ export function LearningList(props: {
         <p className="rounded-xl bg-card px-4 py-10 text-center text-base ring-1 ring-foreground/10">{t("empty")}</p>
       ) : (
         <>
-          <ul className="flex flex-col gap-3">
+          <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {props.tracks.map((track) => {
               const Icon = KIND_ICONS[track.kind];
               return (

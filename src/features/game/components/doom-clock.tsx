@@ -32,7 +32,7 @@ export function DoomClock(props: { blocks: DoomBlock[]; today: string; timeZone:
   const current = currentBlock(props.blocks, seconds);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-bg p-4">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-bg p-4 eclipse-sky">
       {status.isLastHour && <div aria-hidden="true" className="doom-vignette pointer-events-none absolute inset-0" />}
       <ParticleCanvas
         mode="inward"

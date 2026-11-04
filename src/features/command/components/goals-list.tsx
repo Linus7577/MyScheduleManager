@@ -81,7 +81,7 @@ export function GoalsList({ goals }: { goals: (Goal & { percent: number; project
       {goals.length === 0 ? (
         <p className="rounded-xl bg-card px-4 py-10 text-center text-base ring-1 ring-foreground/10">{t("empty")}</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {goals.map((goal) => (
             <li key={goal.id}>
               <Link href={`/goals/${goal.id}`} className="glow-card flex flex-col gap-2 rounded-xl bg-card p-4 ring-1 ring-foreground/10">

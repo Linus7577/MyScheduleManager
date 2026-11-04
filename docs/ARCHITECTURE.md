@@ -104,8 +104,8 @@ flowchart LR
 - **Called by:** the lobby, and anything that marks a key moment.
 - **If it fails:** phones block sound until the first tap, so nothing depends on it. The line is on screen either way.
 
-### Section places (built, code-drawn for now)
-- **Does:** gives each section its own place in the same world, with a name and accent color, over the citadel painting recolored to that place's light.
+### Section places (layouts built, paintings still to come)
+- **Does:** gives each section its own place in the same world, with its own name plate, accent color, panel shape and arrangement. Behind that is the citadel painting, recolored to that place's light until the place has its own painting.
 - **Owns:** nothing. The address decides the place.
 - **Called by:** the signed-in layout.
 - **If it fails:** the section works as normal on a dark background.

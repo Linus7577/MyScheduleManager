@@ -1,5 +1,14 @@
 # Changelog
 
+## Game look, second pass
+
+- **Tiers 1 and 2 redrawn:** Tier 1 now wears a deep hood and a cracked iron half-mask, with only his eyes showing. Tier 2 wears an ash-grey great helm and bulky burnt plate, with embers along his mantle, so the two no longer look alike.
+- **Each section has its own layout:** the name above the title, the shape of the panels and how the page is arranged now differ by place. For example, the War Table's panels are orders on a battle map, the Hoard has heavy gold frames and a centered title, the Archive's panels look like bound books, and the Armory's are riveted steel. More, Goals, Learning and Habits use two columns on a wide screen.
+- **The Doom Clock and focus timer** now burn under a black sun.
+- **Card hover glow fixed:** cards in the sections had stopped glowing when pressed. They now glow in the place's own color.
+- **Art script:** it can now cut out grey armor without punching holes in it.
+- **Still owed, and waiting on new pictures:** Tiers 3 and 6 need redrawing, because Tier 3 shows his face and Tier 6 his hair. Tiers 5, 7 and 8 still borrow nearby art, and the final boss is to be fully combined with the dragon. Each section's backdrop is still the recolored citadel until it has its own painting, 12 in all.
+
 ## What changed in Phase 7: Rituals & Polish
 
 - **Calendar:** events can repeat daily, weekly, monthly or by a custom rule, and one date can be taken out of a series. One-off events can be dragged to a new time or resized. There's search, jump to date, and `.ics` import and export. Importing the same file twice adds nothing.

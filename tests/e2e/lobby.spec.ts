@@ -207,6 +207,30 @@ test("the lobby speaks Chinese when the app does", async ({ page, context, reque
   await expect(page.getByRole("region", { name: "城塞" }).getByText("下一場戰鬥")).toBeVisible();
 });
 
+test("each place frames its panels its own way", async ({ page, request }) => {
+  await seed(request);
+  const frames = new Set<string>();
+  const paths = ["/loop", "/finance", "/vault/sections", "/goals", "/learning", "/habits", "/battle-log", "/more", "/settings"];
+  for (const path of paths) {
+    await page.goto(path);
+    const panel = page.locator("main .bg-card").first();
+    await expect(panel, path).toBeVisible();
+    frames.add(
+      await panel.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return `${style.borderRadius} ${style.boxShadow}`;
+      })
+    );
+  }
+  expect(frames.size).toBe(paths.length);
+
+  // Its own frame mustn't swallow the glow a card gets when pressed.
+  await page.goto("/more");
+  const door = page.locator("main .glow-card").first();
+  await door.hover();
+  await expect.poll(() => door.evaluate((element) => getComputedStyle(element).boxShadow)).toContain("22px");
+});
+
 test("each section is its own place, and nothing scrolls sideways", async ({ page, request }) => {
   await seed(request);
   const places: [string, string][] = [
