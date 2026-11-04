@@ -11,6 +11,7 @@ Short definitions of terms you'll meet in this project.
 | **activation** | A record saying "this template is active from this date". The latest one on or before a date wins. |
 | **audit log** | An append-only record of important actions, kept for later review. |
 | **auth hook** | Your own code that Supabase runs during sign-in. Ours rejects sign-ups from any other email. |
+| **average cost** | What you paid per share on average, fees included. Selling takes shares out at this price, which is how realized profit is worked out. |
 | **Battle Log** | The screen showing your ledger: every XP and Power change, and why. |
 | **block instance** | One real block on one real date, such as "Study, Tuesday 3 November, 09:00". Copied from a template block, and it's what you check off. |
 | **client component** | UI code that runs in the browser, needed for interactivity. Never holds secrets. |
@@ -18,9 +19,13 @@ Short definitions of terms you'll meet in this project.
 | **collapse** | The penalty for Power sitting at 0 for 3 closeouts in a row: you lose one level. |
 | **correction** | Changing a block after its day closed, allowed for 24 hours. It adds new ledger rows and never edits old ones. |
 | **cron** | A job that runs on a schedule. Vercel Hobby allows each job to run once per day. |
+| **dividend** | Money a company pays you for holding its shares. Recorded here as income linked to that holding. |
 | **CSP (Content Security Policy)** | A header telling the browser which scripts and connections to allow. It limits damage from injected code. |
 | **environment variable (env var)** | A setting stored outside the code, such as a key. Kept in `.env.local` and on Vercel. |
+| **exchange rate (FX rate)** | What one unit of a currency is worth in another. Every record here stores the rate it used, in TWD. |
+| **Finnhub** | The free service that provides US stock prices. It needs a key, which stays on the server. |
 | **heatmap** | A grid of days, where a filled square means something happened that day. Used for habits. |
+| **holding** | A stock you own, built up from your trades: how many shares, and what they cost. |
 | **hysteresis** | Waiting before reacting, to prevent flicker. Your tier only drops after 3 closeouts below its level. |
 | **i18n** | "Internationalization": making the app work in several languages. Text lives in `messages/`. |
 | **idempotent** | Safe to repeat: running it twice has the same result as once. Closeout must be. |
@@ -28,6 +33,7 @@ Short definitions of terms you'll meet in this project.
 | **ledger** | A list of changes that's only ever added to. Current XP is the sum of the list, like a bank statement. |
 | **lazy (generation or closeout)** | Doing work only when it's first needed, rather than on a schedule. |
 | **manifest** | A small file describing the app to the phone: its name, icon and colours. It makes the app installable. |
+| **market value** | What a holding would be worth at the current price: shares times price. |
 | **migration** | A numbered file that changes the database's structure. Together they can rebuild it from nothing. |
 | **next-intl** | The library that picks the right language's text. |
 | **nonce** | A random one-time value. A script carrying this request's nonce may run; injected scripts can't guess it. |
@@ -36,6 +42,8 @@ Short definitions of terms you'll meet in this project.
 | **publishable key** | The Supabase key that's safe in the browser (`sb_publishable_...`). It can only do what RLS allows. |
 | **PWA** | Progressive Web App: a website you can install on your phone like an app. |
 | **rate limiting** | Capping how often something can be called, to protect a free quota. |
+| **realized profit/loss (P/L)** | Profit or loss locked in by selling. Compare unrealized profit/loss. |
+| **recurring rule** | A saved instruction to create a transaction on a repeating date, such as rent every month. |
 | **proposal** | A change the Oracle suggests, which does nothing until you approve it. Expires after 48 hours. |
 | **prompt injection** | Text hidden in data, like a note saying "ignore your rules", that tries to give an AI orders. This is why notes are fenced off as data. |
 | **Reckoning** | The screen summarizing what closeout did, shown on your first open after one. Also the name of closeout itself. |
@@ -53,9 +61,12 @@ Short definitions of terms you'll meet in this project.
 | **template** | One version of your repeating week, such as Semester or Exam Week. Its blocks are the plan, not the real schedule. |
 | **wall-clock time** | A time as read off a clock, like 09:00, with no timezone attached. Blocks are stored this way. |
 | **token** | The unit AI services count text in, about 4 English characters. Free tiers limit tokens per minute. |
+| **TWSE / TPEx** | Taiwan's two stock exchanges. Their free official data gives each day's closing prices, not live ones. |
 | **tool (AI)** | A specific action the AI may ask the server to run. The AI only asks: the server decides and does the work. |
 | **track** | A course, roadmap or book you're working through. Blocks and tasks can be tagged with one. |
 | **transaction** | A group of database changes that succeed or fail as one, so nothing is left half done. |
+| **transaction (money)** | One expense or income record in the Treasury. A different meaning from the database one above. |
+| **unrealized profit/loss (P/L)** | Profit or loss on shares you still hold. It moves with the price, and is only on paper until you sell. |
 | **VAPID** | Keys that identify your app to the browser's push service, so only it can send you notifications. |
 | **widget** | One movable card on the Home dashboard, which can be open, collapsed or hidden. |
 | **Zod** | A library that checks data has the expected shape, and rejects it if not. |

@@ -2,7 +2,7 @@
 
 The big picture of My Schedule Manager: what the pieces are, how data moves, and how it stays private.
 
-Status: **updated at the end of Phase 4.** Parts marked *planned* describe the design for later phases and don't exist yet.
+Status: **updated at the end of Phase 5.** Parts marked *planned* describe the design for later phases and don't exist yet.
 
 ## 1. System diagram
 
@@ -25,9 +25,9 @@ flowchart LR
 
   Google["Google"]
   Groq["Groq AI"]
-  Finnhub["Finnhub US prices (planned)"]
-  TW["Taiwan price source (planned)"]
-  FX["FX rates source (planned)"]
+  Finnhub["Finnhub<br/>US prices"]
+  TW["TWSE and TPEx<br/>Taiwan closing prices"]
+  FX["ExchangeRate-API<br/>daily exchange rates"]
 
   PWA --> Proxy --> App
   App --> Auth
@@ -35,9 +35,9 @@ flowchart LR
   Auth <--> Google
   Cron -->|"secret header"| App
   App --> Groq
-  App -.-> Finnhub
-  App -.-> TW
-  App -.-> FX
+  App --> Finnhub
+  App --> TW
+  App --> FX
 ```
 
 **In one sentence:** every request passes the gate, the app talks to the database as you (so the database's own rules apply), and the browser never holds a secret.
@@ -128,11 +128,11 @@ flowchart LR
 - **Called by:** the closeout, corrections and every Oracle change.
 - **If it fails:** the page shows an error state. Closeouts write their entry in the same transaction as the closeout itself.
 
-### Finance (planned, Phase 5)
-- **Does:** expenses, income, budgets and portfolio tracking.
-- **Owns:** the `fin_*`, `transactions`, `trades` and price tables.
-- **Called by:** Treasury pages. The Oracle has no access.
-- **If it fails:** if a price source is down, you see the last known price and can set one by hand.
+### Finance, "The Treasury" (built)
+- **Does:** expenses and income in TWD, USD or IDR, repeating transactions, monthly budgets with alerts, and portfolio tracking. Totals are always worked out from the records, never stored.
+- **Owns:** `fin_categories`, `transactions`, `recurring_rules`, `budgets`, `trades`, `price_cache`, `fx_rates`, `portfolio_snapshots`.
+- **Called by:** Treasury pages, the Home banner and widgets, and the daily cron. The Oracle has no access.
+- **If it fails:** a price source being down leaves the last known price showing, and any price or rate can be set by hand. Money trouble in the cron can't stop the day's closeout.
 
 ### Vault (planned, Phase 6)
 - **Does:** organizes links and notes pointing to files stored elsewhere.
@@ -146,7 +146,7 @@ flowchart LR
 - **Called by:** the weekly cron.
 - **If it fails:** you miss the alert, but the review still exists in the app.
 
-## 3. Three traced flows
+## 3. Traced flows
 
 The first two flows are real today. Anything marked *planned* will be corrected as that phase is built.
 
@@ -192,6 +192,13 @@ The first two flows are real today. Anything marked *planned* will be corrected 
 6. You see a before-and-after card, and tap **Approve**, **Edit** or **Reject**.
 7. On approval, the server checks the proposal hasn't passed its 48 hours and the block hasn't changed since. Only then does it change `block_instances`, and write it to `audit_log`.
 
+### "I add NT$120 of food, then buy a stock"
+1. You tap **Add**, type 120 on the number pad and tap **Food**. Tapping the category is what saves it.
+2. A server action checks the input with Zod. For foreign money it finds the rate for that date and stores the original amount, the rate and the TWD value together, so later rate changes can't rewrite the past.
+3. The page refreshes. Totals and budgets are worked out from the records, and a budget at 80% or 100% raises the banner.
+4. Adding a trade first replays every trade by date, and refuses it if you'd be selling shares you didn't hold yet.
+5. Once the page is on screen, it asks for any price or rate that's out of date, so a slow source never holds the page up. The numbers update when the answer arrives, and today's portfolio value is saved for the history chart.
+
 ## 4. Security explained simply
 
 Each layer stops something different, so one failure doesn't expose everything. "Built" means it exists and has tests. Google sign-in and the hook still need a real test once your accounts exist.
@@ -230,4 +237,9 @@ Each layer stops something different, so one failure doesn't expose everything. 
 - **The AI provider is a setting.** The app speaks the common OpenAI chat format, so changing `AI_PROVIDER`, `AI_BASE_URL` and `AI_MODEL` switches provider with no code change. The default is `openai/gpt-oss-20b` on Groq, because it supports tools on the free tier and has no retirement date.
 - **The Oracle is kept deliberately short-winded.** Free tiers allow few tokens per minute, so it gets a capped summary, its last 6 messages, and one tool request per step.
 - **Charts follow fixed rules.** Colours were checked with a colour-blindness validator rather than chosen by eye. A learning track keeps its colour, there's only ever one axis, and every chart has a table view.
+- **Money is rounded to cents at every step.** Computers can't hold values like 0.1 exactly, so every money result passes through one rounding function, and budget percentages are worked out in whole cents.
+- **Holdings use the average-cost method.** A sale takes shares out at the average cost so far. Each trade keeps its own exchange rate, so profit in TWD includes any gain from the currency moving.
+- **A stock's currency follows its market.** US stocks are in USD and Taiwan stocks in TWD, so one holding's average cost can never mix two currencies.
+- **Outside sources sit behind one interface.** `market-data.ts` is the only code that talks to Finnhub, TWSE, TPEx and the rate source. Tests and preview mode use fixed answers instead, so they never touch the network.
+- **Categories are archived, never deleted.** Old records must keep their category. A default category stores a key rather than a name, so it shows in your language until you rename it.
 - **Every game change is one transaction.** The server can't make several database calls safely in a row, because a crash midway would leave things half done. So one Postgres function, `apply_game_commit`, does it all. It also checks a version number, so two tabs can't overwrite each other's changes.
