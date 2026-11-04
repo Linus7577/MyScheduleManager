@@ -1,0 +1,6 @@
+These voice clips were made with VOICEVOX, using the voice VOICEVOX:青山龍星.
+
+If you reuse them, you must keep this credit and follow the voice's terms:
+https://www.virvoxproject.com/voicevoxの利用規約
+
+They may not be used to train other voice models.

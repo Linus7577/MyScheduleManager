@@ -7,7 +7,8 @@
 - **Sound:** thunder, wind and game sounds, with a mute button on Home.
 - **Key moments:** marking a block done or skipped brings a sound and a line from him.
 - **Each section is its own place:** with its own name, accent color and recolored painting.
-- **Not done yet:** Tiers 5, 7 and 8 borrow nearby art. Tiers 1 and 2 still need redrawing with a helmet or mask. Each section's own painting and layout are still to come. Canva's AI allowance ran out, and it resets on the 1st of each month. His Japanese voice isn't in yet, so the lines are text only.
+- **His voice:** he now speaks Japanese, in 21 clips of about 20 KB each, made with VOICEVOX:青山龍星. The owner picked the delivery by ear. Six lines the engine misread or stressed wrongly are spelled out by hand. The credit is on Home and in Settings.
+- **Not done yet:** Tiers 5, 7 and 8 borrow nearby art. Tiers 1 and 2 still need redrawing with a helmet or mask. Each section's own painting and layout are still to come. Canva's AI allowance ran out, and it resets on the 1st of each month.
 
 ## What changed in Phase 6: The Vault
 

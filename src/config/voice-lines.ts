@@ -28,5 +28,19 @@ export const VOICE_SCRIPT: Record<LineId, string> = {
   t1: "その姿に、ふさわしい戦をしろ。",
 };
 
-/** Turned on once the clips exist in public/audio/voice. Until then he speaks in text only. */
-export const VOICE_CLIPS_READY = false;
+/**
+ * Lines the voice engine misreads, spelled out in its pronunciation notation. An apostrophe marks where the pitch
+ * falls, and a slash separates phrases. It read 立て as "date", 刃 as "ha", 認めろ as "shitatamero", and ran 戦は
+ * together. The others read correctly, but ran words together or stressed them in the wrong place.
+ */
+export const VOICE_PRONUNCIATION: Partial<Record<LineId, string>> = {
+  r1: "タチドマ'ルナ、オマエノ'/ヤイバワ'、モ'オ/ニブラ'ナイ",
+  w2: "マ'ダ/ケ'ンワ/ニギレルダロオ'、タ'テ",
+  a2: "ヨ'ク/ヤ'ッタ、ダ'ガ、ア_シタ'モ/イ_クサワ'/ク'ル",
+  w3: "ヨワ'サオ/ミトメ'ロ、ソ_シテ'/キリ_ステ'ロ",
+  b2: "ドンゾコカ'、ナ'ラバ、ア'トワ/ハイアガ'ルダケダ",
+  s2: "キョ'オト/イウ'/センジョオワ'、イチドキ'リダ",
+};
+
+/** Whether the clips exist in public/audio/voice. Without them he speaks in text only. */
+export const VOICE_CLIPS_READY = true;

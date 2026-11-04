@@ -26,6 +26,7 @@ export default async function HomePage() {
   const tiers = await getTranslations("tiers");
   const powerStates = await getTranslations("powerStates");
   const dashboard = await getTranslations("dashboard");
+  const settings = await getTranslations("settings");
   const templates = await getTranslations("templates");
   const format = await getFormatter();
   const ctx = await getScheduleContext();
@@ -104,6 +105,7 @@ export default async function HomePage() {
           weekly: <WeeklyWidget ctx={ctx} />,
         }}
       />
+      <p className="px-1 text-center text-xs text-muted-foreground">{settings("voiceCredit")}</p>
       </div>
     </div>
   );

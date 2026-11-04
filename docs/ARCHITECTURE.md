@@ -92,8 +92,8 @@ flowchart LR
 - **Called by:** the Home page and status strip. His speech box and key-moment lines run on every page.
 - **If it fails:** purely decorative, with your data unaffected. On phones it uses fewer particles, and at the Off motion setting the art holds still.
 
-### Sound (built, voice not yet)
-- **Does:** thunder, wind and game sound effects, made live by the browser with no audio files or music licences. His Japanese voice clips will play through the same code once they exist.
+### Sound and voice (built)
+- **Does:** thunder, wind and game sound effects, made live by the browser with no audio files or music licences. His Japanese voice is 21 small clips, made once ahead of time, so the live app needs no voice service.
 - **Owns:** your mute choice, saved in this browser only.
 - **Called by:** the lobby, and anything that marks a key moment.
 - **If it fails:** phones block sound until the first tap, so nothing depends on it. The line is on screen either way.
@@ -256,6 +256,7 @@ Each layer stops something different, so one failure doesn't expose everything. 
 - **Categories are archived, never deleted.** Old records must keep their category. A default category stores a key rather than a name, so it shows in your language until you rename it.
 - **Painted art, moved by code.** Images are generated once, cut out and compressed by `scripts/prepare-art.mjs`, and animated only with movement and fading, which phones handle smoothly. The dragon is three copies of one picture, with the wings cut out so they can beat around the shoulders.
 - **The art never copies its references.** The owner's reference pictures only guided the style, because the code and art are public and nobody here knows who owns them.
+- **His voice is checked, not assumed.** The voice engine guesses how to read kanji, and it guessed some wrong, such as reading 立て ("stand") as "date". `voice-lines.ts` spells those lines out by hand. Check any new line the same way.
 - **The Vault treats saved text as untrusted.** Addresses must be `http` or `https`, checked in both the form's schema and the database, so a saved item can't hold a `javascript:` link. Notes are turned into a page on the server with raw HTML and pictures removed, so a pasted note can't run code or tell another site you opened it. The Oracle has no way to read the Vault.
 - **Vault search runs in your browser.** The page loads your items once, and each keystroke filters them with no trip to the server. It's instant, and it suits one person's collection.
 - **Every game change is one transaction.** The server can't make several database calls safely in a row, because a crash midway would leave things half done. So one Postgres function, `apply_game_commit`, does it all. It also checks a version number, so two tabs can't overwrite each other's changes.

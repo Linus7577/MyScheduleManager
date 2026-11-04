@@ -58,6 +58,7 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
       )}
+      <p className="px-1 text-xs text-muted-foreground">{t("voiceCredit")}</p>
     </div>
   );
 }

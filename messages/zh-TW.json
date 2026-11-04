@@ -832,7 +832,8 @@
     "invalid": "無法辨識此選項，未做任何變更。",
     "saveFailed": "書記失手，未能儲存。請再試一次。",
     "account": "帳號",
-    "signOut": "登出"
+    "signOut": "登出",
+    "voiceCredit": "語音合成：VOICEVOX:青山龍星"
   },
   "login": {
     "title": "進入要塞",

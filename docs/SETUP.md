@@ -98,6 +98,27 @@ You don't need these yet. They're here so this file stays complete.
 - **Phase 5, Finnhub:** create a free key at finnhub.io and set `FINNHUB_API_KEY` in `.env.local` and in Vercel. **Why:** US stock prices. Without it, US prices are set by hand. Taiwan prices and exchange rates need no key.
 - **Phase 7, VAPID keys:** these identify your app to the browser's push service, so only you can send it notifications. The exact command is added when that phase is built.
 
+## Making the voice clips
+You only need this to change or add the warrior's lines. The finished clips are already in `public/audio/voice`.
+
+**Why:** his Japanese voice is made ahead of time as small MP3 files, so the live app needs no voice service and costs nothing.
+
+1. From these official releases, download the following into one empty folder, about 93 MB in all:
+   - `15.vvm`, the voice model, from [VOICEVOX/voicevox_vvm](https://github.com/VOICEVOX/voicevox_vvm/releases)
+   - `voicevox_onnxruntime-win-x64-1.17.3.tgz` from [VOICEVOX/onnxruntime-builder](https://github.com/VOICEVOX/onnxruntime-builder/releases)
+   - `open_jtalk_dic_utf_8-1.11.tar.gz` from [r9y9/open_jtalk](https://github.com/r9y9/open_jtalk/releases)
+   - the `win_amd64.whl` file from [VOICEVOX/voicevox_core](https://github.com/VOICEVOX/voicevox_core/releases)
+2. Unpack the two `.tgz` and `.tar.gz` files in that folder.
+3. Create a Python environment in it, and install the `.whl` file into that environment with `pip`.
+4. Run this from the project folder, with your own paths:
+   ```bash
+   node scripts/generate-voice.mjs --python <folder>/venv/Scripts/python.exe --tools <folder>
+   ```
+
+Add a line to `src/config/voice-lines.ts` and to both messages files first. **Why:** tests check that every line has its Japanese and both translations.
+
+**The credit is required.** The voice's terms ask for `VOICEVOX:青山龍星` to be shown, which the app does in Settings and at the bottom of Home. Individuals may use it free, commercially or not. A company or sole proprietor must ask [ななはぴ](https://v.seventhh.com/contact/) first, so check this if the app ever becomes a business. The clips also can't be used to train other voice models.
+
 ## Adding database changes later
 Each phase adds a new file in `supabase/migrations/`. Run each new file once in the SQL Editor, oldest first, **before** deploying the code that needs it. **Why:** this keeps the live database matching the code, and pages using a table that doesn't exist yet would fail.
 

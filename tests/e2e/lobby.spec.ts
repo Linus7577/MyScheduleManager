@@ -78,6 +78,46 @@ test("tapping him brings a new line, in the app's language and never in Japanese
   expect(await line.textContent()).not.toMatch(/[぀-ヿ]/);
 });
 
+test("tapping him plays his voice, unless sound is muted", async ({ page, request }) => {
+  await seed(request);
+  await page.goto("/");
+  const speak = lobby(page).getByRole("button", { name: "Speak to him" });
+  const [clip] = await Promise.all([page.waitForResponse(/\/audio\/voice\/\w+\.mp3/), speak.click()]);
+  expect(clip.ok()).toBe(true);
+
+  let played = 0;
+  page.on("request", (sent) => {
+    if (sent.url().includes("/audio/voice/")) played++;
+  });
+  await lobby(page).getByRole("button", { name: "Mute sound" }).click();
+  await speak.click();
+  await page.waitForTimeout(400);
+  expect(played).toBe(0);
+  await lobby(page).getByRole("button", { name: "Mute sound" }).click();
+});
+
+test("his voice clips really load as sound", async ({ page }) => {
+  await page.goto("/login");
+  const seconds = await page.evaluate(
+    () =>
+      new Promise<number>((resolve, reject) => {
+        const clip = new Audio("/audio/voice/s3.mp3");
+        clip.addEventListener("loadedmetadata", () => resolve(clip.duration));
+        clip.addEventListener("error", () => reject(new Error("The clip wouldn't load")));
+      })
+  );
+  expect(seconds).toBeGreaterThan(1);
+  expect(seconds).toBeLessThan(10);
+});
+
+test("the voice is credited on Home and in Settings", async ({ page, request }) => {
+  await seed(request);
+  await page.goto("/");
+  await expect(page.getByText("Voice made with VOICEVOX:青山龍星")).toBeAttached();
+  await page.goto("/settings");
+  await expect(page.getByText("Voice made with VOICEVOX:青山龍星")).toBeVisible();
+});
+
 test("sound can be muted, and stays muted after a reload", async ({ page, request }) => {
   await seed(request);
   await page.goto("/");

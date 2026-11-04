@@ -47,6 +47,7 @@ export function setSoundMuted(value: boolean): void {
   muted = value;
   writeMuted(value);
   if (master && context) master.gain.setTargetAtTime(value ? 0 : 1, context.currentTime, 0.05);
+  if (value) voice?.pause();
   listeners.forEach((listener) => listener());
 }
 

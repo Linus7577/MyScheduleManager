@@ -832,7 +832,8 @@
     "invalid": "That choice is not recognized. Nothing was changed.",
     "saveFailed": "The scribe failed. Nothing was saved. Try again.",
     "account": "Account",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "voiceCredit": "Voice made with VOICEVOX:青山龍星"
   },
   "login": {
     "title": "Enter the Keep",

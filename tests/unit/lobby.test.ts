@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { TIERS, WARRIOR_ART_BY_TIER, WARRIOR_EYES_BY_ART } from "@/config/game.config";
-import { VOICE_SCRIPT } from "@/config/voice-lines";
+import { VOICE_CLIPS_READY, VOICE_PRONUNCIATION, VOICE_SCRIPT } from "@/config/voice-lines";
 import { firstLine, moodFor, nextBlock, pickLine, WARRIOR_LINES, type LineMood } from "@/features/game/lines";
 
 const read = (file: string) => JSON.parse(readFileSync(file, "utf8"));
@@ -94,6 +94,36 @@ describe("his lines and art", () => {
       expect(zh[id], id).toBeTruthy();
     }
     expect(Object.keys(en).sort()).toEqual([...ids].sort());
+  });
+
+  it("has a real voice clip for every line, and it's small", () => {
+    expect(VOICE_CLIPS_READY).toBe(true);
+    for (const id of ids) {
+      const clip = readFileSync(`public/audio/voice/${id}.mp3`);
+      expect(clip.length, id).toBeGreaterThan(3000);
+      expect(clip.length, id).toBeLessThan(60 * 1024);
+      // Every MP3 frame starts with these bits.
+      expect(clip[0], id).toBe(0xff);
+      expect(clip[1] & 0xe0, id).toBe(0xe0);
+    }
+  });
+
+  it("spells out the lines the engine misreads, in kana the engine can read", () => {
+    for (const [id, kana] of Object.entries(VOICE_PRONUNCIATION)) {
+      expect(VOICE_SCRIPT[id as keyof typeof VOICE_SCRIPT], id).toBeTruthy();
+      // Katakana, and the engine's marks for pitch, phrases, pauses and whispered sounds, with no kanji left.
+      expect(kana, id).toMatch(/^[\u30a0-\u30ff'/、_]+$/);
+    }
+    // The misreadings found by checking the engine's own output.
+    expect(VOICE_PRONUNCIATION.w2).toContain("タ'テ");
+    expect(VOICE_PRONUNCIATION.w3).toContain("ミトメ'ロ");
+    expect(VOICE_PRONUNCIATION.r1).toContain("ヤイバ");
+  });
+
+  it("credits the voice in both languages, as its terms require", () => {
+    expect(read("messages/en.json").settings.voiceCredit).toContain("VOICEVOX:青山龍星");
+    expect(read("messages/zh-TW.json").settings.voiceCredit).toContain("VOICEVOX:青山龍星");
+    expect(readFileSync("public/audio/voice/CREDITS.txt", "utf8")).toContain("VOICEVOX:青山龍星");
   });
 
   it("has art for every tier", () => {
