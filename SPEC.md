@@ -161,7 +161,7 @@ This came after Phase 6 and is built before Phase 7. Where it conflicts with Sec
 - **Dragon on Home:** painted into the citadel scene as one picture, supplied by the owner (2026-11-04), so it's part of the sky: a crimson winged dragon coming at the viewer, jaws open, claws out, tail visible. It's a "living painting": soft-edged copies of its wings, claws, body and head move a little on top of the picture, with glowing eyes and throat, embers and lightning flashes. The warrior stands in front, off to one side.
 - **Dragon on the Oracle:** the Oracle *is* a dragon, the earlier standing one, tinted to melt into its surroundings. It stands behind the chat and moves through code the same way.
 - **Character:** one original male anime warrior, stoic, fierce, strong and merciless, with a mantle and a mysterious aura. The pose stays the same. Power states are shown by code effects.
-- **Each tier is its own design:** his head is always covered by a helmet or mask. Tiers don't show one helmet slowly breaking. Each has a unique design, and some of those happen to be broken. Blood on the armor is part of the look.
+- **Each tier is its own design:** his head is always covered by a helmet or mask. Tiers don't show one helmet slowly breaking. Each has a unique design, and some of those happen to be broken. Next to each other, tiers must look clearly different, not like a recolor of the one before (owner, 2026-11-04). Blood on the armor is part of the look.
 
 | Tier | Head | Mantle and armor |
 |---|---|---|
@@ -172,7 +172,7 @@ This came after Phase 6 and is built before Phase 7. Where it conflicts with Sec
 | 5 Dread Warlord | Massive horned helm, cracked open on one side to show one eye | Heavy war mantle, torn banner, soaked in blood |
 | 6 Abyss Sovereign | Shattered black helm, one eye and a scar exposed | Obsidian armor, rune rings |
 | 7 Crimson Tyrant | Iron skull mask split down the middle, eyes burning | Blood-drenched armor, flaming greatsword, wings of smoke |
-| 8 The Eclipse | Black-and-gold crown helm covering half the face, one eye blazing | Final-boss armor, eclipse halo |
+| 8 The Eclipse | Black-and-gold crown helm covering half the face, one eye blazing | The final boss, fully combined with the dragon: dragon scale, wings and tail grown into his body, eclipse halo |
 
 - **Voice:** he speaks Japanese, in pre-made clips, when tapped and at key moments (a block finished, Power lost, a level gained). Lines fit the owner's state, such as a streak or a bad day. Lines are original, not quotes from any work.
 - **Line text:** one line only, in the app's language (English or 繁體中文). The Japanese isn't shown as text.

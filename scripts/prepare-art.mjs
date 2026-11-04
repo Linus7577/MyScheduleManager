@@ -23,7 +23,10 @@ const MIN_LIGHTNESS = 96;
 const POCKET = 52;
 const MIN_POCKET_PIXELS = 8;
 
-function cutOut({ data, info }) {
+// Grey armor sits close to the grey background, so its highlights would be cut away as background.
+const CUT_FOR_TIER = { 2: { soft: 62, pockets: false } };
+
+function cutOut({ data, info }, { soft = SOFT, pockets = true } = {}) {
   const { width, height } = info;
   const px = (x, y) => (y * width + x) * 4;
   const corners = [px(4, 4), px(width - 5, 4), px(4, height - 5), px(width - 5, height - 5)];
@@ -42,7 +45,7 @@ function cutOut({ data, info }) {
       if (seen[at]) continue;
       const i = at * 4;
       const d = distance(i);
-      if (!(d < limit || (limit === SOFT && d < SOFT && lightness(i) > MIN_LIGHTNESS))) continue;
+      if (!(d < limit || (limit === soft && d < soft && lightness(i) > MIN_LIGHTNESS))) continue;
       seen[at] = 1;
       region.push(at);
       stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
@@ -54,7 +57,7 @@ function cutOut({ data, info }) {
     for (const at of region) {
       const i = at * 4;
       const d = distance(i);
-      const alpha = d <= HARD ? 0 : Math.min(1, (d - HARD) / (SOFT - HARD));
+      const alpha = d <= HARD ? 0 : Math.min(1, (d - HARD) / (soft - HARD));
       for (let c = 0; c < 3; c++) {
         // Takes the grey back out of a partly see-through colour, so no pale fringe is left.
         data[i + c] = alpha === 0 ? 0 : Math.max(0, Math.min(255, (data[i + c] - (1 - alpha) * bg[c]) / alpha));
@@ -64,15 +67,15 @@ function cutOut({ data, info }) {
   };
 
   for (let x = 0; x < width; x++) {
-    clear(flood(x, 0, SOFT));
-    clear(flood(x, height - 1, SOFT));
+    clear(flood(x, 0, soft));
+    clear(flood(x, height - 1, soft));
   }
   for (let y = 0; y < height; y++) {
-    clear(flood(0, y, SOFT));
-    clear(flood(width - 1, y, SOFT));
+    clear(flood(0, y, soft));
+    clear(flood(width - 1, y, soft));
   }
   // Enclosed pockets must be close to the exact grey, so armor highlights inside the figure stay.
-  for (let y = 0; y < height; y++) {
+  for (let y = 0; pockets && y < height; y++) {
     for (let x = 0; x < width; x++) {
       if (seen[y * width + x] || distance(px(x, y)) >= POCKET) continue;
       const pocket = flood(x, y, POCKET);
@@ -81,7 +84,7 @@ function cutOut({ data, info }) {
       // Then its soft rim, the same way as the outer edge.
       for (const at of pocket) {
         const [px_, py] = [at % width, Math.floor(at / width)];
-        for (const [nx, ny] of [[px_ + 1, py], [px_ - 1, py], [px_, py + 1], [px_, py - 1]]) clear(flood(nx, ny, SOFT));
+        for (const [nx, ny] of [[px_ + 1, py], [px_ - 1, py], [px_, py + 1], [px_, py - 1]]) clear(flood(nx, ny, soft));
       }
     }
   }
@@ -179,7 +182,7 @@ for (let tier = 1; tier <= 8; tier++) {
   const name = `warrior-${tier}.png`;
   if (!existsSync(join(source, name))) continue;
   // Same canvas for every tier, so swapping tiers never shifts where he stands.
-  const cut = await cutOut(await load(name)).png().toBuffer();
+  const cut = await cutOut(await load(name), CUT_FOR_TIER[tier]).png().toBuffer();
   const full = join(OUT, "warrior", `tier-${tier}.webp`);
   await sharp(cut).resize({ width: 720 }).webp({ quality: 80, alphaQuality: 80, effort: 6 }).toFile(full);
   report(full);

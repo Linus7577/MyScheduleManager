@@ -75,8 +75,8 @@ export const CORRECTION_WINDOW_HOURS = 24;
 export const WARRIOR_ART_BY_TIER = [1, 2, 3, 4, 4, 6, 6, 6] as const;
 /** Where his eyes glow on each piece of art, as a percentage across and down it. */
 export const WARRIOR_EYES_BY_ART: Record<number, { x: number; y: number }[]> = {
-  1: [{ x: 45.5, y: 10.6 }, { x: 51.5, y: 10.6 }],
-  2: [{ x: 45.5, y: 10.8 }, { x: 51.5, y: 10.8 }],
+  1: [{ x: 46.6, y: 11.1 }, { x: 52.4, y: 11 }],
+  2: [{ x: 46.3, y: 9.5 }, { x: 53.2, y: 9.6 }],
   3: [{ x: 47, y: 10.6 }, { x: 52.5, y: 10.6 }],
   4: [{ x: 49.5, y: 11.6 }],
   6: [{ x: 52, y: 11.4 }],
